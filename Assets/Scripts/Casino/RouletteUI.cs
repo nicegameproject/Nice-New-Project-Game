@@ -1,7 +1,9 @@
-﻿using TMPro;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
 
 public class RouletteUI : MonoBehaviour
 {
@@ -16,10 +18,15 @@ public class RouletteUI : MonoBehaviour
     [SerializeField] private Button[] betButtons;
     [SerializeField] private TextMeshProUGUI betAmountText;
 
+    [SerializeField] private TextMeshProUGUI betsPanelText;
+
+
     private int betAmount = 0;
     private int minBet = 1;
     private int maxBet = 100;
-    private int chosenNumber = -1;
+
+    private List<int> chosenNumbers = new List<int>();
+    private Dictionary<int, int> placedBets = new Dictionary<int, int>();
 
     private void Start()
     {
@@ -29,11 +36,10 @@ public class RouletteUI : MonoBehaviour
         UpdateBetAmountText();
         EnableBetAndPlayButtons();
 
-        // przypisanie akcji do przycisków numerów
         for (int i = 0; i < betButtons.Length; i++)
         {
             int number = i;
-            betButtons[i].onClick.AddListener(() => SelectNumber(number));
+            betButtons[i].onClick.AddListener(() => ToggleBet(number));
         }
 
         playButton.onClick.AddListener(PlayGame);
@@ -41,35 +47,27 @@ public class RouletteUI : MonoBehaviour
 
     public void PlayGame()
     {
-        if (chosenNumber == -1)
+        if (placedBets.Count == 0)
         {
-            resultText.text = "Najpierw wybierz numer!";
+            resultText.text = "Najpierw wybierz numer(y)!";
             return;
         }
-
-        if (betAmount > casino.PlayerMoney || betAmount <= 0)
-        {
-            resultText.text = "Nieprawidłowy zakład.";
-            return;
-        }
-
-        casino.PlayerMoney -= betAmount;
-        UpdateMoney();
 
         DisableBetAndPlayButtons();
-
         StartCoroutine(RandomSpin());
     }
-
 
     private IEnumerator RandomSpin()
     {
         int randomResultNumber = Random.Range(0, 16);
         yield return StartCoroutine(rouletteWheel.Spin(randomResultNumber));
 
-        if (randomResultNumber == chosenNumber)
+        if (placedBets.ContainsKey(randomResultNumber))
         {
-            int win = (randomResultNumber == 0) ? betAmount * 14 : betAmount * 2;
+            int win = (randomResultNumber == 0)
+                ? placedBets[randomResultNumber] * 14
+                : placedBets[randomResultNumber] * 2;
+
             casino.PlayerMoney += win;
             resultText.text = $"Wypadło: {randomResultNumber} Wygrałeś {win} zł!";
         }
@@ -79,37 +77,42 @@ public class RouletteUI : MonoBehaviour
         }
 
         UpdateMoney();
-        chosenNumber = -1;
+        chosenNumbers.Clear();
+        betsPanelText.text = "";
+        //placedBets.Clear();
+        ResetButtonColors();
         EnableBetAndPlayButtons();
+
+
     }
 
-
-
-    /*   private IEnumerator RandomSpin()
-       {
-           yield return StartCoroutine(rouletteWheel.Spin(2));
-
-
-   *//*        if (result == chosenNumber)
-           {
-               int win = (result == 0) ? betAmount * 14 : betAmount * 2;
-               casino.PlayerMoney += win;
-               resultText.text = $"Wypadło: {result} Wygrałeś {win} zł!";
-           }
-           else
-           {
-               resultText.text = $"Wypadło: {result} Przegrałeś!";
-           }*//*
-
-           UpdateMoney();
-           chosenNumber = -1;
-           EnableBetAndPlayButtons();
-       }*/
-
-    void SelectNumber(int number)
+    void ToggleBet(int number)
     {
-        chosenNumber = number;
-        resultText.text = $"Wybrano numer: {chosenNumber}";
+        if (placedBets.ContainsKey(number))
+        {
+            casino.PlayerMoney += placedBets[number];
+            placedBets.Remove(number);
+            betButtons[number].GetComponent<Image>().color = Color.white;
+            resultText.text = $"Usunięto zakład na numer {number}";
+        }
+        else
+        {
+            if (casino.PlayerMoney >= betAmount)
+            {
+                casino.PlayerMoney -= betAmount;
+                placedBets[number] = betAmount;
+                betButtons[number].GetComponent<Image>().color = Color.green;
+                resultText.text = $"Dodano zakład {betAmount} zł na numer {number}";
+            }
+            else
+            {
+                resultText.text = "Brak wystarczających środków!";
+                return;
+            }
+        }
+
+        UpdateMoney();
+        UpdateBetsPanel();
     }
 
     public void IncreaseBet()
@@ -125,6 +128,23 @@ public class RouletteUI : MonoBehaviour
             betAmount -= 10;
         UpdateBetAmountText();
     }
+
+    void UpdateBetsPanel()
+    {
+        if (placedBets.Count == 0)
+        {
+            betsPanelText.text = "Brak obstawień";
+            return;
+        }
+
+        betsPanelText.text = "Obstawienia:\n";
+
+        foreach (var bet in placedBets.OrderByDescending(b => b.Value))
+        {
+            betsPanelText.text += $"Numer {bet.Key} → {bet.Value} zł\n";
+        }
+    }
+
 
     void UpdateBetAmountText()
     {
@@ -150,5 +170,11 @@ public class RouletteUI : MonoBehaviour
         decreaseBetButton.interactable = true;
         playButton.interactable = true;
         foreach (var btn in betButtons) btn.interactable = true;
+    }
+
+    void ResetButtonColors()
+    {
+        foreach (var btn in betButtons)
+            btn.GetComponent<Image>().color = Color.white;
     }
 }

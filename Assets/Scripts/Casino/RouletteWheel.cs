@@ -7,9 +7,7 @@ public class RouletteWheel : MonoBehaviour
     [SerializeField] private float spinTime = 4f;
     [SerializeField] private int totalSlots = 16;
     [SerializeField] private int extraSpins = 3;
-    [SerializeField] private AnimationCurve spinCurve = new AnimationCurve(
-        new Keyframe(0, 0, 0, 0),
-        new Keyframe(1, 1, 0, 0));
+    private AnimationCurve spinCurve = new AnimationCurve(new Keyframe(0, 0, 0, 0), new Keyframe(1, 1, 0, 0));
 
     public IEnumerator Spin(int result)
     {
