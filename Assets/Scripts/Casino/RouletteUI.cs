@@ -53,35 +53,58 @@ public class RouletteUI : MonoBehaviour
             return;
         }
 
-        int result = Random.Range(0, 37); // 0-36
-
         casino.PlayerMoney -= betAmount;
         UpdateMoney();
 
         DisableBetAndPlayButtons();
 
-        StartCoroutine(SpinAndCheck(result));
+        StartCoroutine(RandomSpin());
     }
 
-    private IEnumerator SpinAndCheck(int result)
-    {
-        yield return StartCoroutine(rouletteWheel.Spin(result));
 
-        if (result == chosenNumber)
+    private IEnumerator RandomSpin()
+    {
+        int randomResultNumber = Random.Range(0, 16);
+        yield return StartCoroutine(rouletteWheel.Spin(randomResultNumber));
+
+        if (randomResultNumber == chosenNumber)
         {
-            int win = (result == 0) ? betAmount * 14 : betAmount * 2;
+            int win = (randomResultNumber == 0) ? betAmount * 14 : betAmount * 2;
             casino.PlayerMoney += win;
-            resultText.text = $"Wypadło: {result} 🎉 Wygrałeś {win} zł!";
+            resultText.text = $"Wypadło: {randomResultNumber} Wygrałeś {win} zł!";
         }
         else
         {
-            resultText.text = $"Wypadło: {result} ❌ Przegrałeś!";
+            resultText.text = $"Wypadło: {randomResultNumber} Przegrałeś!";
         }
 
         UpdateMoney();
         chosenNumber = -1;
         EnableBetAndPlayButtons();
     }
+
+
+
+    /*   private IEnumerator RandomSpin()
+       {
+           yield return StartCoroutine(rouletteWheel.Spin(2));
+
+
+   *//*        if (result == chosenNumber)
+           {
+               int win = (result == 0) ? betAmount * 14 : betAmount * 2;
+               casino.PlayerMoney += win;
+               resultText.text = $"Wypadło: {result} Wygrałeś {win} zł!";
+           }
+           else
+           {
+               resultText.text = $"Wypadło: {result} Przegrałeś!";
+           }*//*
+
+           UpdateMoney();
+           chosenNumber = -1;
+           EnableBetAndPlayButtons();
+       }*/
 
     void SelectNumber(int number)
     {

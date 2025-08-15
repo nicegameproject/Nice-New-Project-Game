@@ -3,37 +3,34 @@ using UnityEngine;
 
 public class RouletteWheel : MonoBehaviour
 {
-    [SerializeField] private Transform wheel; 
-    [SerializeField] private float spinTime = 4f; 
-    [SerializeField] private float startSpeed = 500f;
-    private const int slots = 37; 
+    [SerializeField] private Transform wheel;
+    [SerializeField] private float spinTime = 4f;
+    [SerializeField] private int totalSlots = 16;
+    [SerializeField] private int extraSpins = 3;
+    [SerializeField] private AnimationCurve spinCurve = new AnimationCurve(
+        new Keyframe(0, 0, 0, 0),
+        new Keyframe(1, 1, 0, 0));
 
-    public IEnumerator Spin(int winningNumber)
+    public IEnumerator Spin(int result)
     {
-        float anglePerSlot = 360f / slots;
+        float startRotation = wheel.eulerAngles.z;
+        float degreesPerSlot = 360f / totalSlots;
 
-        float targetAngle = -winningNumber * anglePerSlot;
+        float targetAngle = result * degreesPerSlot;
 
-        float totalRotation = targetAngle - wheel.eulerAngles.z - (360f * 5);
+        float endRotation = -(extraSpins * 360f + targetAngle);
 
-        float startAngle = wheel.eulerAngles.z;
         float elapsed = 0f;
-
         while (elapsed < spinTime)
         {
-            float t = elapsed / spinTime;
-            float currentAngle = Mathf.Lerp(startAngle, startAngle + totalRotation, EaseOutCubic(t));
-            wheel.eulerAngles = new Vector3(0, 0, currentAngle);
             elapsed += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsed / spinTime);
+            float curveValue = spinCurve.Evaluate(t);
+            float currentRotation = Mathf.Lerp(startRotation, endRotation, curveValue);
+            wheel.eulerAngles = new Vector3(0, 0, currentRotation);
             yield return null;
         }
 
-        wheel.eulerAngles = new Vector3(0, 0, startAngle + totalRotation);
-    }
-
-    private float EaseOutCubic(float t)
-    {
-        t--;
-        return t * t * t + 1;
+        wheel.eulerAngles = new Vector3(0, 0, endRotation);
     }
 }
