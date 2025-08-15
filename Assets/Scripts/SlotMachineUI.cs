@@ -1,32 +1,65 @@
 ﻿using UnityEngine;
 using TMPro;
+using UnityEngine.UI;
+using System;
 using System.Collections;
 
 public class SlotMachineUI : MonoBehaviour
 {
-    public Casino casino;
-    public TextMeshProUGUI[] slotTexts = new TextMeshProUGUI[9];
-    public TextMeshProUGUI resultText;
-    public TextMeshProUGUI moneyText;
-    public TextMeshProUGUI betAmountText;
-    public float spinDuration = 1.5f;
+    [SerializeField] private Casino casino;
+    [SerializeField] private TextMeshProUGUI[] slotTexts = new TextMeshProUGUI[9];
+    [SerializeField] private TextMeshProUGUI resultText;
+    [SerializeField] private TextMeshProUGUI moneyText;
+    [SerializeField] private TextMeshProUGUI betAmountText;
+    [SerializeField] private TextMeshProUGUI jackpotText;
+    [SerializeField] private float spinDuration = 1.5f;
 
-    public int betAmount = 10;
-    public int minBet = 1;
-    public int maxBet = 100;
+    [SerializeField] private int betAmount = 10;
+    [SerializeField] private int minBet = 1;
+    [SerializeField] private int maxBet = 100;
+
+    private int jackpot = 0; 
+    private int jackpotIncrement = 10; 
 
     string[] symbols = { "1", "2", "3", "4", "5" };
     int[] symbolMultipliers = { 1, 2, 3, 5, 10 };
+
+    [SerializeField] private Button spinButton;
+    [SerializeField] private Button autoSpinButton;
+    [SerializeField] private Button increaseBetButton;
+    [SerializeField] private Button decreaseBetButton;
+
+    public event Action OnSpinStarted;
+    public event Action OnSpinEnded;
 
     void Start()
     {
         UpdateBetAmountText();
         UpdateMoneyText();
+        UpdateJackpotText();
+        OnSpinStarted += DisableSpinButtons;
+        OnSpinEnded += EnableSpinButtons;
+    }
+
+    void DisableSpinButtons()
+    {
+        spinButton.interactable = false;
+        autoSpinButton.interactable = false;    
+        increaseBetButton.interactable = false;
+        decreaseBetButton.interactable = false;
+    }
+
+    void EnableSpinButtons()
+    {
+        spinButton.interactable = true;
+        autoSpinButton.interactable = true;
+        increaseBetButton.interactable = true;
+        decreaseBetButton.interactable = true;
     }
 
     public void IncreaseBet()
     {
-        if (betAmount + 10 <= maxBet && betAmount + 10 <= casino.playerMoney)
+        if (betAmount + 10 <= maxBet && betAmount + 10 <= casino.PlayerMoney)
             betAmount += 10;
         UpdateBetAmountText();
     }
@@ -38,18 +71,20 @@ public class SlotMachineUI : MonoBehaviour
         UpdateBetAmountText();
     }
 
-    public void OnPlaySlotClicked()
+    public void OnSpinClicked()
     {
-        if (betAmount > casino.playerMoney)
+        if (betAmount > casino.PlayerMoney)
         {
             resultText.text = "Nie masz wystarczająco pieniędzy!";
             return;
         }
-        StartCoroutine(SpinSlots(betAmount));
+        OnSpinStarted?.Invoke();
+        StartCoroutine(SpinSlots(betAmount, true));
     }
 
     public void OnAutoSpinClicked()
     {
+        OnSpinStarted?.Invoke();
         StartCoroutine(AutoSpin(10));
     }
 
@@ -57,17 +92,22 @@ public class SlotMachineUI : MonoBehaviour
     {
         for (int i = 0; i < count; i++)
         {
-            if (betAmount > casino.playerMoney)
+            if (betAmount > casino.PlayerMoney)
             {
                 resultText.text = "Brak środków na dalsze spiny!";
                 break;
             }
-            yield return StartCoroutine(SpinSlots(betAmount));
-            yield return new WaitForSeconds(0.5f);
+            yield return StartCoroutine(SpinSlots(betAmount, false));
+
+            if (resultText.text.StartsWith("Wygrałeś!"))
+                yield return new WaitForSeconds(2f);
+            else
+                yield return new WaitForSeconds(0.5f);
         }
+        OnSpinEnded?.Invoke();
     }
 
-    IEnumerator SpinSlots(int bet)
+    IEnumerator SpinSlots(int bet, bool endSpinOnFinish)
     {
         int rows = 3, cols = 3;
         string[,] finalBoard = new string[rows, cols];
@@ -82,7 +122,7 @@ public class SlotMachineUI : MonoBehaviour
             {
                 for (int c = 0; c < cols; c++)
                 {
-                    string symbol = symbols[Random.Range(0, symbols.Length)];
+                    string symbol = symbols[UnityEngine.Random.Range(0, symbols.Length)];
                     slotTexts[r * cols + c].text = symbol;
                 }
             }
@@ -94,7 +134,7 @@ public class SlotMachineUI : MonoBehaviour
         {
             for (int c = 0; c < cols; c++)
             {
-                finalBoard[r, c] = symbols[Random.Range(0, symbols.Length)];
+                finalBoard[r, c] = symbols[UnityEngine.Random.Range(0, symbols.Length)];
                 slotTexts[r * cols + c].text = finalBoard[r, c];
             }
         }
@@ -143,11 +183,11 @@ public class SlotMachineUI : MonoBehaviour
             winningIndices.Add(6);
         }
 
-        casino.playerMoney -= bet;
+        casino.PlayerMoney -= bet;
         if (totalWin > 0)
         {
-            resultText.text = $"Wygrałeś! Wygrana: {totalWin} zł.";
-            casino.playerMoney += totalWin;
+            resultText.text = $"Wygrałeś! Wygrana: {totalWin:N0} zł.";
+            casino.PlayerMoney += totalWin;
             foreach (int idx in winningIndices)
                 slotTexts[idx].color = Color.red;
         }
@@ -155,7 +195,35 @@ public class SlotMachineUI : MonoBehaviour
         {
             resultText.text = "Przegrałeś!";
         }
+            
         UpdateMoneyText();
+        UpdateJackpotText();
+        jackpot += jackpotIncrement;
+        UpdateJackpotText();
+
+        bool isJackpotWin = true;
+        string firstSymbol = finalBoard[0, 0];
+        for (int r = 0; r < rows; r++)
+        {
+            for (int c = 0; c < cols; c++)
+            {
+                if (finalBoard[r, c] != firstSymbol)
+                {
+                    isJackpotWin = false;
+                    break;
+                }
+            }
+            if (!isJackpotWin) break;
+        }
+        if (isJackpotWin && firstSymbol == "5")
+        {
+            casino.PlayerMoney += jackpot;
+            resultText.text = $"JACKPOT! Wygrywasz: {jackpot:N0} zł!";
+            jackpot = 1000;
+            UpdateJackpotText();
+        }
+        if (endSpinOnFinish)
+            OnSpinEnded?.Invoke();
     }
 
     void UpdateBetAmountText()
@@ -165,6 +233,11 @@ public class SlotMachineUI : MonoBehaviour
 
     void UpdateMoneyText()
     {
-        moneyText.text = $"Stan konta: {casino.playerMoney} zł";
+        moneyText.text = $"Stan konta: {(int)casino.PlayerMoney:N0} zł";
+    }
+
+    void UpdateJackpotText()
+    {
+        jackpotText.text = $"Jackpot: {jackpot:N0} zł";
     }
 }

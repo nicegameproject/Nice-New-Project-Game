@@ -2,7 +2,8 @@
 
 public class Casino : MonoBehaviour
 {
-    public int playerMoney = 100;
+    private int playerMoney = 1000;
+    public int PlayerMoney { get => playerMoney; set => playerMoney = value; }
 
     public void PlayRoulette(int bet, int chosenNumber)
     {
@@ -47,29 +48,6 @@ public class Casino : MonoBehaviour
         else
         {
             Debug.Log($"Przegrałeś! Wyrzucono: {dice}. Stan konta: {playerMoney} zł.");
-        }
-    }
-
-    public void PlayThreeCups(int bet, int chosenCup)
-    {
-        if (bet > playerMoney || bet <= 0 || chosenCup < 1 || chosenCup > 3)
-        {
-            Debug.Log("Nieprawidłowy zakład lub numer kubka (1-3).");
-            return;
-        }
-
-        playerMoney -= bet;
-        int ballCup = Random.Range(1, 4); // losuje kubek z piłeczką (1-3)
-
-        if (chosenCup == ballCup)
-        {
-            int win = bet * 2;
-            playerMoney += win;
-            Debug.Log($"Brawo! Piłeczka była pod kubkiem {ballCup}. Wygrana: {win} zł. Stan konta: {playerMoney} zł.");
-        }
-        else
-        {
-            Debug.Log($"Niestety, piłeczka była pod kubkiem {ballCup}. Przegrałeś! Stan konta: {playerMoney} zł.");
         }
     }
 }
