@@ -5,28 +5,7 @@ public class Casino : MonoBehaviour
     private int playerMoney = 1000;
     public int PlayerMoney { get => playerMoney; set => playerMoney = value; }
 
-    public void PlayRoulette(int bet, int chosenNumber)
-    {
-        if (bet > playerMoney || bet <= 0 || chosenNumber < 0 || chosenNumber > 36)
-        {
-            Debug.Log("Nieprawidłowy zakład lub liczba.");
-            return;
-        }
 
-        playerMoney -= bet;
-        int result = Random.Range(0, 37); // 0-36
-
-        if (result == chosenNumber)
-        {
-            int win = bet * 35;
-            playerMoney += win;
-            Debug.Log($"Wygrałeś! Wygrana: {win} zł. Stan konta: {playerMoney} zł.");
-        }
-        else
-        {
-            Debug.Log($"Przegrałeś! Wypadło: {result}. Stan konta: {playerMoney} zł.");
-        }
-    }
 
     public void PlayDice(int bet)
     {
