@@ -1,32 +1,87 @@
-﻿using UnityEngine;
+﻿using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
 
-public class Casino : MonoBehaviour
+namespace Game.CasinoSystem
 {
-    private int playerMoney = 1000;
-    public int PlayerMoney { get => playerMoney; set => playerMoney = value; }
-
-
-
-    public void PlayDice(int bet)
+    public abstract class Casino : MonoBehaviour
     {
-        if (bet > playerMoney || bet <= 0)
+        private int playerMoney = 1000;
+        public int PlayerMoney { get => playerMoney; set => playerMoney = value; }
+
+        [Header("Base UI Components")]
+        [SerializeField] protected TextMeshProUGUI resultText;
+        [SerializeField] protected TextMeshProUGUI moneyText;
+        [SerializeField] protected TextMeshProUGUI betAmountText;
+        [SerializeField] protected Button increaseBetButton;
+        [SerializeField] protected Button decreaseBetButton;
+        [SerializeField] protected Button playButton;
+
+        [Header("Bet Settings")]
+        [SerializeField] protected int minBet = 1;
+        [SerializeField] protected int maxBet = 100;
+        [SerializeField] protected int betStep = 10;
+
+        protected int betAmount = 0;
+        protected bool isGameInProgress = false;
+
+        protected virtual void Start()
         {
-            Debug.Log("Nieprawidłowa kwota zakładu.");
-            return;
+            UpdateBetAmountText();
+            UpdateMoneyText();
+            resultText.text = "";
         }
 
-        playerMoney -= bet;
-        int dice = Random.Range(1, 7); // 1-6
-
-        if (dice == 6)
+        protected virtual void OnEnable()
         {
-            int win = bet * 5;
-            playerMoney += win;
-            Debug.Log($"Wygrałeś! Wyrzucono 6. Wygrana: {win} zł. Stan konta: {playerMoney} zł.");
+            resultText.text = "";
+            UpdateMoneyText();
+            UpdateBetAmountText();
+            EnableGameControls();
         }
-        else
+
+        public abstract void PlayGame();
+
+        public virtual void IncreaseBet()
         {
-            Debug.Log($"Przegrałeś! Wyrzucono: {dice}. Stan konta: {playerMoney} zł.");
+            if (betAmount + betStep <= maxBet && betAmount + betStep <= PlayerMoney)
+            {
+                betAmount += betStep;
+            }
+            UpdateBetAmountText();
+        }
+
+        public virtual void DecreaseBet()
+        {
+            if (betAmount - betStep >= minBet)
+            {
+                betAmount -= betStep;
+            }
+            UpdateBetAmountText();
+        }
+
+        protected void UpdateMoneyText()
+        {
+            moneyText.text = $"Stan konta: {PlayerMoney:N0} zł";
+        }
+
+        protected void UpdateBetAmountText()
+        {
+            betAmountText.text = $"Zakład: {betAmount} zł";
+        }
+
+        protected virtual void DisableGameControls()
+        {
+            increaseBetButton.interactable = false;
+            decreaseBetButton.interactable = false;
+            if (playButton != null) playButton.interactable = false;
+        }
+
+        protected virtual void EnableGameControls()
+        {
+            increaseBetButton.interactable = true;
+            decreaseBetButton.interactable = true;
+            if (playButton != null) playButton.interactable = true;
         }
     }
 }

@@ -5,176 +5,152 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class RouletteUI : MonoBehaviour
+namespace Game.CasinoSystem
 {
-    [SerializeField] private Casino casino;
-    [SerializeField] private RouletteWheel rouletteWheel;
-
-    [SerializeField] private TextMeshProUGUI resultText;
-    [SerializeField] private TextMeshProUGUI moneyText;
-    [SerializeField] private Button increaseBetButton;
-    [SerializeField] private Button decreaseBetButton;
-    [SerializeField] private Button playButton;
-    [SerializeField] private Button[] betButtons;
-    [SerializeField] private TextMeshProUGUI betAmountText;
-
-    [SerializeField] private TextMeshProUGUI betsPanelText;
-
-
-    private int betAmount = 0;
-    private int minBet = 1;
-    private int maxBet = 100;
-
-    private List<int> chosenNumbers = new List<int>();
-    private Dictionary<int, int> placedBets = new Dictionary<int, int>();
-
-    private void Start()
+    public class RouletteUI : Casino
     {
-        resultText.text = "";
+        [Header("Roulette Specific")]
+        [SerializeField] private RouletteWheel rouletteWheel;
+        [SerializeField] private Button[] betButtons;
+        [SerializeField] private TextMeshProUGUI betsPanelText;
 
-        UpdateMoney();
-        UpdateBetAmountText();
-        EnableBetAndPlayButtons();
+        private readonly Dictionary<int, int> PlacedBets = new();
 
-        for (int i = 0; i < betButtons.Length; i++)
+        protected override void OnEnable()
         {
-            int number = i;
-            betButtons[i].onClick.AddListener(() => ToggleBet(number));
+            base.OnEnable(); 
+            UpdateBetsPanel();
+            ResetButtonColors();
         }
 
-        playButton.onClick.AddListener(PlayGame);
-    }
-
-    public void PlayGame()
-    {
-        if (placedBets.Count == 0)
+        private void OnDisable()
         {
-            resultText.text = "Najpierw wybierz numer(y)!";
-            return;
+            if (betButtons != null)
+                foreach (var btn in betButtons) btn.onClick.RemoveAllListeners();
         }
 
-        DisableBetAndPlayButtons();
-        StartCoroutine(RandomSpin());
-    }
-
-    private IEnumerator RandomSpin()
-    {
-        int randomResultNumber = Random.Range(0, 16);
-        yield return StartCoroutine(rouletteWheel.Spin(randomResultNumber));
-
-        if (placedBets.ContainsKey(randomResultNumber))
+        public override void PlayGame()
         {
-            int win = (randomResultNumber == 0)
-                ? placedBets[randomResultNumber] * 14
-                : placedBets[randomResultNumber] * 2;
+            if (isGameInProgress) return;
 
-            casino.PlayerMoney += win;
-            resultText.text = $"Wypadło: {randomResultNumber} Wygrałeś {win} zł!";
-        }
-        else
-        {
-            resultText.text = $"Wypadło: {randomResultNumber} Przegrałeś!";
-        }
-
-        UpdateMoney();
-        chosenNumbers.Clear();
-        betsPanelText.text = "";
-        //placedBets.Clear();
-        ResetButtonColors();
-        EnableBetAndPlayButtons();
-
-
-    }
-
-    void ToggleBet(int number)
-    {
-        if (placedBets.ContainsKey(number))
-        {
-            casino.PlayerMoney += placedBets[number];
-            placedBets.Remove(number);
-            betButtons[number].GetComponent<Image>().color = Color.white;
-            resultText.text = $"Usunięto zakład na numer {number}";
-        }
-        else
-        {
-            if (casino.PlayerMoney >= betAmount)
+            if (PlacedBets.Count == 0)
             {
-                casino.PlayerMoney -= betAmount;
-                placedBets[number] = betAmount;
-                betButtons[number].GetComponent<Image>().color = Color.green;
-                resultText.text = $"Dodano zakład {betAmount} zł na numer {number}";
+                resultText.text = "Najpierw wybierz numer(y)!";
+                return;
+            }
+
+            isGameInProgress = true;
+            DisableGameControls();
+            StartCoroutine(RandomSpin());
+        }
+
+        private IEnumerator RandomSpin()
+        {
+            int randomResultNumber = Random.Range(0, 16);
+            yield return StartCoroutine(rouletteWheel.Spin(randomResultNumber));
+
+            bool isWin = PlacedBets.ContainsKey(randomResultNumber);
+
+            if (isWin)
+                Win(randomResultNumber);
+            else
+                Lose(randomResultNumber);
+
+            HighlightOutcome(randomResultNumber, isWin);
+            UpdateMoneyText();
+
+            yield return new WaitForSeconds(1f);
+
+            PlacedBets.Clear();
+            UpdateBetsPanel();
+            ResetButtonColors();
+            EnableGameControls();
+            isGameInProgress = false;
+        }
+
+        private void Win(int number)
+        {
+            int win = (number == 0)
+                ? PlacedBets[number] * 35
+                : PlacedBets[number] * 2;
+
+            PlayerMoney += win;
+            resultText.text = $"Wypadło: {number} Wygrałeś {win} zł!";
+        }
+
+        private void Lose(int number)
+        {
+            resultText.text = $"Wypadło: {number} Przegrałeś!";
+        }
+
+        private void HighlightOutcome(int number, bool isWin)
+        {
+            var img = betButtons[number].GetComponent<Image>();
+            if (img == null) return;
+            img.color = isWin ? new Color(1f, 0.84f, 0f) : Color.red;
+        }
+
+        public void ToggleBet(int number)
+        {
+            if (PlacedBets.ContainsKey(number))
+            {
+                PlayerMoney += PlacedBets[number];
+                PlacedBets.Remove(number);
+                betButtons[number].GetComponent<Image>().color = Color.white;
+                resultText.text = $"Usunięto zakład na numer {number}";
             }
             else
             {
-                resultText.text = "Brak wystarczających środków!";
+                if (PlayerMoney >= betAmount)
+                {
+                    if (betAmount == 0)
+                    {
+                        resultText.text = "Nie możesz obstawić 0 zł!";
+                        return;
+                    }
+                    PlayerMoney -= betAmount;
+                    PlacedBets[number] = betAmount;
+                    betButtons[number].GetComponent<Image>().color = Color.green;
+                    resultText.text = $"Dodano zakład {betAmount} zł na numer {number}";
+                }
+                else
+                {
+                    resultText.text = "Brak wystarczających środków!";
+                    return;
+                }
+            }
+            UpdateMoneyText();
+            UpdateBetsPanel();
+        }
+
+        private void UpdateBetsPanel()
+        {
+            if (PlacedBets.Count == 0)
+            {
+                betsPanelText.text = "Brak obstawień";
                 return;
             }
+            betsPanelText.text = "Obstawienia:\n";
+            foreach (var bet in PlacedBets.OrderByDescending(b => b.Value))
+                betsPanelText.text += $"Numer {bet.Key} → {bet.Value} zł\n";
         }
 
-        UpdateMoney();
-        UpdateBetsPanel();
-    }
-
-    public void IncreaseBet()
-    {
-        if (betAmount + 10 <= maxBet && betAmount + 10 <= casino.PlayerMoney)
-            betAmount += 10;
-        UpdateBetAmountText();
-    }
-
-    public void DecreaseBet()
-    {
-        if (betAmount - 10 >= minBet)
-            betAmount -= 10;
-        UpdateBetAmountText();
-    }
-
-    void UpdateBetsPanel()
-    {
-        if (placedBets.Count == 0)
+        private void ResetButtonColors()
         {
-            betsPanelText.text = "Brak obstawień";
-            return;
+            foreach (var btn in betButtons)
+                btn.GetComponent<Image>().color = Color.white;
         }
 
-        betsPanelText.text = "Obstawienia:\n";
-
-        foreach (var bet in placedBets.OrderByDescending(b => b.Value))
+        protected override void DisableGameControls()
         {
-            betsPanelText.text += $"Numer {bet.Key} → {bet.Value} zł\n";
+            base.DisableGameControls();
+            foreach (var btn in betButtons) btn.interactable = false;
         }
-    }
 
-
-    void UpdateBetAmountText()
-    {
-        betAmountText.text = $"Zakład: {betAmount} zł";
-    }
-
-    void UpdateMoney()
-    {
-        moneyText.text = $"Stan konta: {casino.PlayerMoney} zł";
-    }
-
-    void DisableBetAndPlayButtons()
-    {
-        increaseBetButton.interactable = false;
-        decreaseBetButton.interactable = false;
-        playButton.interactable = false;
-        foreach (var btn in betButtons) btn.interactable = false;
-    }
-
-    void EnableBetAndPlayButtons()
-    {
-        increaseBetButton.interactable = true;
-        decreaseBetButton.interactable = true;
-        playButton.interactable = true;
-        foreach (var btn in betButtons) btn.interactable = true;
-    }
-
-    void ResetButtonColors()
-    {
-        foreach (var btn in betButtons)
-            btn.GetComponent<Image>().color = Color.white;
+        protected override void EnableGameControls()
+        {
+            base.EnableGameControls();
+            foreach (var btn in betButtons) btn.interactable = true;
+        }
     }
 }

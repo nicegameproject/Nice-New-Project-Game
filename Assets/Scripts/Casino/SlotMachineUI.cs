@@ -1,243 +1,141 @@
-﻿using UnityEngine;
+﻿using System.Collections;
 using TMPro;
+using UnityEngine;
 using UnityEngine.UI;
-using System;
-using System.Collections;
 
-public class SlotMachineUI : MonoBehaviour
+namespace Game.CasinoSystem
 {
-    [SerializeField] private Casino casino;
-    [SerializeField] private TextMeshProUGUI[] slotTexts = new TextMeshProUGUI[9];
-    [SerializeField] private TextMeshProUGUI resultText;
-    [SerializeField] private TextMeshProUGUI moneyText;
-    [SerializeField] private TextMeshProUGUI betAmountText;
-    [SerializeField] private TextMeshProUGUI jackpotText;
-    [SerializeField] private float spinDuration = 1.5f;
-
-    [SerializeField] private int betAmount = 10;
-    [SerializeField] private int minBet = 1;
-    [SerializeField] private int maxBet = 100;
-
-    private int jackpot = 0; 
-    private int jackpotIncrement = 10; 
-
-    string[] symbols = { "1", "2", "3", "4", "5" };
-    int[] symbolMultipliers = { 1, 2, 3, 5, 10 };
-
-    [SerializeField] private Button spinButton;
-    [SerializeField] private Button autoSpinButton;
-    [SerializeField] private Button increaseBetButton;
-    [SerializeField] private Button decreaseBetButton;
-
-    public event Action OnSpinStarted;
-    public event Action OnSpinEnded;
-
-    void Start()
+    public class SlotMachineUI : Casino
     {
-        UpdateBetAmountText();
-        UpdateMoneyText();
-        UpdateJackpotText();
-        OnSpinStarted += DisableSpinButtons;
-        OnSpinEnded += EnableSpinButtons;
-    }
+        [Header("Slot Machine Specific")]
+        [SerializeField] private TextMeshProUGUI[] slotTexts = new TextMeshProUGUI[9];
+        [SerializeField] private TextMeshProUGUI jackpotText;
+        [SerializeField] private float spinDuration = 1.5f;
+        [SerializeField] private Button autoSpinButton;
+        [SerializeField] private int jackpotIncrement = 10;
 
-    void DisableSpinButtons()
-    {
-        spinButton.interactable = false;
-        autoSpinButton.interactable = false;    
-        increaseBetButton.interactable = false;
-        decreaseBetButton.interactable = false;
-    }
+        private int jackpot = 1000;
+        private readonly string[] symbols = { "1", "2", "3", "4", "5" };
+        private readonly int[] symbolMultipliers = { 1, 2, 3, 5, 10 };
 
-    void EnableSpinButtons()
-    {
-        spinButton.interactable = true;
-        autoSpinButton.interactable = true;
-        increaseBetButton.interactable = true;
-        decreaseBetButton.interactable = true;
-    }
-
-    public void IncreaseBet()
-    {
-        if (betAmount + 10 <= maxBet && betAmount + 10 <= casino.PlayerMoney)
-            betAmount += 10;
-        UpdateBetAmountText();
-    }
-
-    public void DecreaseBet()
-    {
-        if (betAmount - 10 >= minBet)
-            betAmount -= 10;
-        UpdateBetAmountText();
-    }
-
-    public void OnSpinClicked()
-    {
-        if (betAmount > casino.PlayerMoney)
+        protected override void Start()
         {
-            resultText.text = "Nie masz wystarczająco pieniędzy!";
-            return;
-        }
-        OnSpinStarted?.Invoke();
-        StartCoroutine(SpinSlots(betAmount, true));
-    }
-
-    public void OnAutoSpinClicked()
-    {
-        OnSpinStarted?.Invoke();
-        StartCoroutine(AutoSpin(10));
-    }
-
-    IEnumerator AutoSpin(int count)
-    {
-        for (int i = 0; i < count; i++)
-        {
-            if (betAmount > casino.PlayerMoney)
-            {
-                resultText.text = "Brak środków na dalsze spiny!";
-                break;
-            }
-            yield return StartCoroutine(SpinSlots(betAmount, false));
-
-            if (resultText.text.StartsWith("Wygrałeś!"))
-                yield return new WaitForSeconds(2f);
-            else
-                yield return new WaitForSeconds(0.5f);
-        }
-        OnSpinEnded?.Invoke();
-    }
-
-    IEnumerator SpinSlots(int bet, bool endSpinOnFinish)
-    {
-        int rows = 3, cols = 3;
-        string[,] finalBoard = new string[rows, cols];
-
-        foreach (var t in slotTexts)
-            t.color = Color.white;
-
-        float elapsed = 0f;
-        while (elapsed < spinDuration)
-        {
-            for (int r = 0; r < rows; r++)
-            {
-                for (int c = 0; c < cols; c++)
-                {
-                    string symbol = symbols[UnityEngine.Random.Range(0, symbols.Length)];
-                    slotTexts[r * cols + c].text = symbol;
-                }
-            }
-            elapsed += 0.1f;
-            yield return new WaitForSeconds(0.1f);
-        }
-
-        for (int r = 0; r < rows; r++)
-        {
-            for (int c = 0; c < cols; c++)
-            {
-                finalBoard[r, c] = symbols[UnityEngine.Random.Range(0, symbols.Length)];
-                slotTexts[r * cols + c].text = finalBoard[r, c];
-            }
-        }
-
-        var winningIndices = new System.Collections.Generic.HashSet<int>();
-        int totalWin = 0;
-        int baseMultiplier = 10;
-
-        // Poziome linie
-        for (int r = 0; r < rows; r++)
-        {
-            if (finalBoard[r, 0] == finalBoard[r, 1] && finalBoard[r, 1] == finalBoard[r, 2])
-            {
-                string winningSymbol = finalBoard[r, 0];
-                int symbolIndex = System.Array.IndexOf(symbols, winningSymbol);
-                int symbolMultiplier = symbolMultipliers[symbolIndex];
-                totalWin += bet * baseMultiplier * symbolMultiplier;
-
-                winningIndices.Add(r * cols + 0);
-                winningIndices.Add(r * cols + 1);
-                winningIndices.Add(r * cols + 2);
-            }
-        }
-        // Przekątna główna
-        if (finalBoard[0, 0] == finalBoard[1, 1] && finalBoard[1, 1] == finalBoard[2, 2])
-        {
-            string winningSymbol = finalBoard[0, 0];
-            int symbolIndex = System.Array.IndexOf(symbols, winningSymbol);             
-            int symbolMultiplier = symbolMultipliers[symbolIndex];
-            totalWin += bet * baseMultiplier * symbolMultiplier;
-
-            winningIndices.Add(0);
-            winningIndices.Add(4);
-            winningIndices.Add(8);
-        }
-        // Przekątna boczna
-        if (finalBoard[0, 2] == finalBoard[1, 1] && finalBoard[1, 1] == finalBoard[2, 0])
-        {
-            string winningSymbol = finalBoard[0, 2];
-            int symbolIndex = System.Array.IndexOf(symbols, winningSymbol);
-            int symbolMultiplier = symbolMultipliers[symbolIndex];
-            totalWin += bet * baseMultiplier * symbolMultiplier;
-
-            winningIndices.Add(2);
-            winningIndices.Add(4);
-            winningIndices.Add(6);
-        }
-
-        casino.PlayerMoney -= bet;
-        if (totalWin > 0)
-        {
-            resultText.text = $"Wygrałeś! Wygrana: {totalWin:N0} zł.";
-            casino.PlayerMoney += totalWin;
-            foreach (int idx in winningIndices)
-                slotTexts[idx].color = Color.red;
-        }
-        else
-        {
-            resultText.text = "Przegrałeś!";
-        }
-            
-        UpdateMoneyText();
-        UpdateJackpotText();
-        jackpot += jackpotIncrement;
-        UpdateJackpotText();
-
-        bool isJackpotWin = true;
-        string firstSymbol = finalBoard[0, 0];
-        for (int r = 0; r < rows; r++)
-        {
-            for (int c = 0; c < cols; c++)
-            {
-                if (finalBoard[r, c] != firstSymbol)
-                {
-                    isJackpotWin = false;
-                    break;
-                }
-            }
-            if (!isJackpotWin) break;
-        }
-        if (isJackpotWin && firstSymbol == "5")
-        {
-            casino.PlayerMoney += jackpot;
-            resultText.text = $"JACKPOT! Wygrywasz: {jackpot:N0} zł!";
-            jackpot = 1000;
+            base.Start();
+            autoSpinButton.onClick.AddListener(OnAutoSpinClicked);
             UpdateJackpotText();
         }
-        if (endSpinOnFinish)
-            OnSpinEnded?.Invoke();
-    }
 
-    void UpdateBetAmountText()
-    {
-        betAmountText.text = $"Zakład: {betAmount} zł";
-    }
+        public override void PlayGame()
+        {
+            if (betAmount > PlayerMoney)
+            {
+                resultText.text = "Nie masz wystarczająco pieniędzy!";
+                return;
+            }
+            isGameInProgress = true;
+            DisableGameControls();
+            StartCoroutine(SpinSlots(betAmount, true));
+        }
 
-    void UpdateMoneyText()
-    {
-        moneyText.text = $"Stan konta: {(int)casino.PlayerMoney:N0} zł";
-    }
+        public void OnAutoSpinClicked()
+        {
+            isGameInProgress = true;
+            DisableGameControls();
+            StartCoroutine(AutoSpin(10));
+        }
 
-    void UpdateJackpotText()
-    {
-        jackpotText.text = $"Jackpot: {jackpot:N0} zł";
+        private IEnumerator AutoSpin(int count)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                if (betAmount > PlayerMoney)
+                {
+                    resultText.text = "Brak środków na dalsze spiny!";
+                    break;
+                }
+                yield return StartCoroutine(SpinSlots(betAmount, false));
+
+                if (resultText.text.StartsWith("Wygrałeś!"))
+                    yield return new WaitForSeconds(2f);
+                else
+                    yield return new WaitForSeconds(0.5f);
+            }
+            isGameInProgress = false;
+            EnableGameControls();
+        }
+
+        private IEnumerator SpinSlots(int bet, bool endSpinOnFinish)
+        {
+            string[,] finalBoard = new string[3, 3];
+            foreach (var t in slotTexts) t.color = Color.white;
+
+            float elapsed = 0f;
+            while (elapsed < spinDuration)
+            {
+                for (int i = 0; i < slotTexts.Length; i++)
+                    slotTexts[i].text = symbols[UnityEngine.Random.Range(0, symbols.Length)];
+                elapsed += 0.1f;
+                yield return new WaitForSeconds(0.1f);
+            }
+
+            for (int r = 0; r < 3; r++)
+                for (int c = 0; c < 3; c++)
+                {
+                    finalBoard[r, c] = symbols[UnityEngine.Random.Range(0, symbols.Length)];
+                    slotTexts[r * 3 + c].text = finalBoard[r, c];
+                }
+
+            var winningIndices = new System.Collections.Generic.HashSet<int>();
+            int totalWin = 0;
+            int baseMultiplier = 10;
+
+            for (int r = 0; r < 3; r++) { if (finalBoard[r, 0] == finalBoard[r, 1] && finalBoard[r, 1] == finalBoard[r, 2]) { totalWin += bet * baseMultiplier * symbolMultipliers[System.Array.IndexOf(symbols, finalBoard[r, 0])]; winningIndices.Add(r * 3); winningIndices.Add(r * 3 + 1); winningIndices.Add(r * 3 + 2); } }
+            if (finalBoard[0, 0] == finalBoard[1, 1] && finalBoard[1, 1] == finalBoard[2, 2]) { totalWin += bet * baseMultiplier * symbolMultipliers[System.Array.IndexOf(symbols, finalBoard[0, 0])]; winningIndices.Add(0); winningIndices.Add(4); winningIndices.Add(8); }
+            if (finalBoard[0, 2] == finalBoard[1, 1] && finalBoard[1, 1] == finalBoard[2, 0]) { totalWin += bet * baseMultiplier * symbolMultipliers[System.Array.IndexOf(symbols, finalBoard[0, 2])]; winningIndices.Add(2); winningIndices.Add(4); winningIndices.Add(6); }
+
+            PlayerMoney -= bet;
+            if (totalWin > 0)
+            {
+                resultText.text = $"Wygrałeś! Wygrana: {totalWin:N0} zł.";
+                PlayerMoney += totalWin;
+                foreach (int idx in winningIndices) slotTexts[idx].color = Color.red;
+            }
+            else
+            {
+                resultText.text = "Przegrałeś!";
+            }
+
+            jackpot += jackpotIncrement;
+            UpdateMoneyText();
+            UpdateJackpotText();
+
+            // Jackpota Logic
+            bool isJackpotWin = true; string firstSymbol = finalBoard[0, 0];
+            for (int r = 0; r < 3; r++) { for (int c = 0; c < 3; c++) { if (finalBoard[r, c] != firstSymbol) { isJackpotWin = false; break; } } if (!isJackpotWin) break; }
+            if (isJackpotWin && firstSymbol == "5") { PlayerMoney += jackpot; resultText.text = $"JACKPOT! Wygrywasz: {jackpot:N0} zł!"; jackpot = 1000; UpdateJackpotText(); }
+
+            if (endSpinOnFinish)
+            {
+                isGameInProgress = false;
+                EnableGameControls();
+            }
+        }
+
+        private void UpdateJackpotText()
+        {
+            jackpotText.text = $"Jackpot: {jackpot:N0} zł";
+        }
+
+        protected override void DisableGameControls()
+        {
+            base.DisableGameControls();
+            autoSpinButton.interactable = false;
+        }
+
+        protected override void EnableGameControls()
+        {
+            base.EnableGameControls();
+            autoSpinButton.interactable = true;
+        }
     }
 }

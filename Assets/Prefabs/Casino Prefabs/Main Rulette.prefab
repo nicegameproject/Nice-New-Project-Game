@@ -6646,13 +6646,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74a45635d59fd7141a17bcb8477b8d29, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  casino: {fileID: 0}
-  rouletteWheel: {fileID: 7072112440013573453}
   resultText: {fileID: 2373467523669854055}
   moneyText: {fileID: 7599140981205251973}
+  betAmountText: {fileID: 6362620395828190416}
   increaseBetButton: {fileID: 5088939949106494038}
   decreaseBetButton: {fileID: 5171605320111967572}
   playButton: {fileID: 2310445148869588121}
+  minBet: 1
+  maxBet: 100
+  betStep: 10
+  rouletteWheel: {fileID: 7072112440013573453}
   betButtons:
   - {fileID: 8862659799066125812}
   - {fileID: 1336989984902808383}
@@ -6670,28 +6673,6 @@ MonoBehaviour:
   - {fileID: 4060101219393457288}
   - {fileID: 4315503834467423064}
   - {fileID: 1852480681345949401}
-  - {fileID: 1787283110169647266}
-  - {fileID: 8090344654946947608}
-  - {fileID: 399468846512368020}
-  - {fileID: 6931409526988004247}
-  - {fileID: 4472812241165940238}
-  - {fileID: 9173630998322202971}
-  - {fileID: 8499668984236465290}
-  - {fileID: 9191854165927513168}
-  - {fileID: 334002025541891238}
-  - {fileID: 94384143585168962}
-  - {fileID: 8223106639915882376}
-  - {fileID: 3898107921860192590}
-  - {fileID: 8519750615642863713}
-  - {fileID: 2301486778718939009}
-  - {fileID: 6949562646041009096}
-  - {fileID: 6553647316993052130}
-  - {fileID: 4942142964722656445}
-  - {fileID: 8489077421318297916}
-  - {fileID: 8792106269622763688}
-  - {fileID: 493732457063625767}
-  - {fileID: 1674844869685705015}
-  betAmountText: {fileID: 6362620395828190416}
   betsPanelText: {fileID: 5253770343712697009}
 --- !u!1 &3835840473309703452
 GameObject:
@@ -8271,7 +8252,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   wheel: {fileID: 4926713647561491734}
-  spinTime: 4
+  spinTime: 10
   totalSlots: 16
   extraSpins: 5
 --- !u!1 &5345585053888384965

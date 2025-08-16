@@ -1318,8 +1318,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 1209545167439744049}
-        m_TargetAssemblyTypeName: SlotMachineUI, Assembly-CSharp
-        m_MethodName: OnSpinClicked
+        m_TargetAssemblyTypeName: Game.CasinoSystem.SlotMachineUI, Assembly-CSharp
+        m_MethodName: PlayGame
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -2199,7 +2199,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c4535fd70b0b38046992bfdef146183d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  casino: {fileID: 0}
+  resultText: {fileID: 3834848449141239091}
+  moneyText: {fileID: 3628014162099166994}
+  betAmountText: {fileID: 11126181229130168}
+  increaseBetButton: {fileID: 4263384600311530492}
+  decreaseBetButton: {fileID: 4619596413869127015}
+  playButton: {fileID: 1666717841411445024}
+  minBet: 10
+  maxBet: 100
+  betStep: 10
   slotTexts:
   - {fileID: 1910906756055720418}
   - {fileID: 6012497985957404661}
@@ -2210,18 +2218,10 @@ MonoBehaviour:
   - {fileID: 1920522917828752390}
   - {fileID: 3682516455926217463}
   - {fileID: 7446620931852972279}
-  resultText: {fileID: 3834848449141239091}
-  moneyText: {fileID: 3628014162099166994}
-  betAmountText: {fileID: 11126181229130168}
   jackpotText: {fileID: 4995475958274648116}
   spinDuration: 1
-  betAmount: 10
-  minBet: 10
-  maxBet: 100
-  spinButton: {fileID: 1666717841411445024}
   autoSpinButton: {fileID: 8862507876365541765}
-  increaseBetButton: {fileID: 4263384600311530492}
-  decreaseBetButton: {fileID: 4619596413869127015}
+  jackpotIncrement: 10
 --- !u!1 &6724304687046938952
 GameObject:
   m_ObjectHideFlags: 0

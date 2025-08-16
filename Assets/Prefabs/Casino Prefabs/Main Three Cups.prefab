@@ -1123,8 +1123,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 8721574089273232411}
-        m_TargetAssemblyTypeName: ThreeCupsUI, Assembly-CSharp
-        m_MethodName: StartGame
+        m_TargetAssemblyTypeName: Game.CasinoSystem.ThreeCupsUI, Assembly-CSharp
+        m_MethodName: PlayGame
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -1400,16 +1400,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 75958ec18b270de4297ff23dfaa60666, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  casino: {fileID: 0}
+  resultText: {fileID: 5321913965821551585}
+  moneyText: {fileID: 26721262602900227}
+  betAmountText: {fileID: 3560074782458378326}
+  increaseBetButton: {fileID: 3437644298939932368}
+  decreaseBetButton: {fileID: 3381718497744923090}
+  playButton: {fileID: 5276852286027075615}
+  minBet: 10
+  maxBet: 100
+  betStep: 10
   cup1Button: {fileID: 6527923733893236960}
   cup2Button: {fileID: 787378580107635459}
   cup3Button: {fileID: 3811603180238787526}
-  playButton: {fileID: 5276852286027075615}
-  resultText: {fileID: 5321913965821551585}
-  moneyText: {fileID: 26721262602900227}
-  increaseBetButton: {fileID: 3437644298939932368}
-  decreaseBetButton: {fileID: 3381718497744923090}
-  betAmountText: {fileID: 3560074782458378326}
   ballImage: {fileID: 8545070316333909846}
 --- !u!1 &8363922699405349829
 GameObject:
