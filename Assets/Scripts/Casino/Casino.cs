@@ -6,7 +6,7 @@ namespace Game.CasinoSystem
 {
     public abstract class Casino : MonoBehaviour
     {
-        private int playerMoney = 1000;
+        private int playerMoney = 10000;
         public int PlayerMoney { get => playerMoney; set => playerMoney = value; }
 
         [Header("Base UI Components")]
