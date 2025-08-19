@@ -18,13 +18,14 @@ namespace Game.CasinoSystem
         [SerializeField] private float highlightDelay = 1.0f;
 
         [Header("Developer Cheats")]
-        [Tooltip("Jeśli zaznaczone, każdy spin wymusi trafienie jednego z wzorów o wysokim mnożniku (>= 7.0).")]
         public bool forceHighMultiplierWin = false;
 
         private int jackpot = 1000;
         private readonly string[] symbols = { "‡", "†", "‰", "♣", "♦", "♥", "♠" };
-        // Dodany mnożnik dla każdego symbolu, zgodnie z prośbą.
         private readonly int[] symbolMultipliers = { 1, 2, 3, 4, 5, 6, 7 };
+        private readonly float[] chanceToShow = { 19.4f, 19.4f, 14.9f, 14.9f, 11.9f, 11.9f, 7.6f };
+
+        private List<string>[] reels;
 
         private class Pattern
         {
@@ -41,7 +42,6 @@ namespace Game.CasinoSystem
             public int[] LineIndices;
             public int WinAmount;
             public Color HighlightColor;
-            // Opcjonalnie można dodać, aby przechowywać więcej informacji do debugowania
             public float FinalMultiplier;
         }
 
@@ -50,6 +50,28 @@ namespace Game.CasinoSystem
             base.Start();
             InitPatterns();
             UpdateJackpotText();
+
+            if (symbols.Length != chanceToShow.Length || symbols.Length != symbolMultipliers.Length)
+            {
+                Debug.LogError("Liczba symboli, ich mnożników i szans na wystąpienie musi być taka sama!");
+            }
+        }
+
+        private int GetRandomSymbolIndexBasedOnChance()
+        {
+            float totalChance = chanceToShow.Sum();
+            float randomValue = Random.Range(0, totalChance);
+            float cumulativeChance = 0f;
+
+            for (int i = 0; i < chanceToShow.Length; i++)
+            {
+                cumulativeChance += chanceToShow[i];
+                if (randomValue < cumulativeChance)
+                {
+                    return i;
+                }
+            }
+            return chanceToShow.Length - 1;
         }
 
         private void InitPatterns()
@@ -125,7 +147,6 @@ namespace Game.CasinoSystem
                     break;
                 }
                 yield return StartCoroutine(SpinSlots(betAmount, false));
-
                 yield return new WaitForSeconds(0.5f);
             }
             isGameInProgress = false;
@@ -137,35 +158,51 @@ namespace Game.CasinoSystem
             foreach (var t in slotTexts) t.color = Color.white;
             resultText.text = "";
 
-            string[] finalSymbols = new string[15];
+            reels = new List<string>[5];
+            for (int c = 0; c < 5; c++)
+            {
+                reels[c] = new List<string>();
+                for (int i = 0; i < 30; i++)
+                    reels[c].Add(symbols[GetRandomSymbolIndexBasedOnChance()]);
+            }
+
+            string[] plannedFinal = null;
             if (forceHighMultiplierWin)
             {
-                var highValuePatterns = patterns.Where(p => p.Multiplier >= 7.0f).ToList();
-                if (highValuePatterns.Count > 0)
+                var candidates = patterns.Where(p => p.Multiplier >= 7.0f).ToList();
+                if (candidates.Count > 0)
                 {
-                    Pattern patternToForce = highValuePatterns[Random.Range(0, highValuePatterns.Count)];
-                    int[] lineToForce = patternToForce.Lines[Random.Range(0, patternToForce.Lines.Length)];
-                    string winningSymbol = symbols[Random.Range(0, symbols.Length)];
-                    for (int i = 0; i < finalSymbols.Length; i++)
+                    var patternToForce = candidates[Random.Range(0, candidates.Count)];
+                    var lineToForce = patternToForce.Lines[Random.Range(0, patternToForce.Lines.Length)];
+                    var winningSymbol = symbols[Random.Range(0, symbols.Length)];
+
+                    plannedFinal = new string[15];
+                    for (int i = 0; i < 15; i++)
                     {
-                        string losingSymbol;
-                        do { losingSymbol = symbols[Random.Range(0, symbols.Length)]; } while (losingSymbol == winningSymbol);
-                        finalSymbols[i] = losingSymbol;
+                        string s;
+                        do { s = symbols[GetRandomSymbolIndexBasedOnChance()]; } while (s == winningSymbol);
+                        plannedFinal[i] = s;
                     }
-                    foreach (int index in lineToForce) finalSymbols[index] = winningSymbol;
+                    foreach (var idx in lineToForce) plannedFinal[idx] = winningSymbol;
                 }
-            }
-            else
-            {
-                for (int i = 0; i < finalSymbols.Length; i++)
-                    finalSymbols[i] = symbols[Random.Range(0, symbols.Length)];
             }
 
             float elapsed = 0f;
-            float stepTime = 0.1f;
+            float stepTime = 0.075f;
             bool[] columnStopped = new bool[5];
             float[] stopTimes = new float[5];
-            for (int c = 0; c < 5; c++) stopTimes[c] = spinDuration + c * 0.2f;
+            int[] currentOffsets = new int[5];
+
+            for (int c = 0; c < 5; c++)
+            {
+                stopTimes[c] = spinDuration + c * 0.8f;
+                int count = reels[c].Count;
+                int start = Random.Range(0, count);
+                slotTexts[0 * 5 + c].text = reels[c][start % count];
+                slotTexts[1 * 5 + c].text = reels[c][(start + 1) % count];
+                slotTexts[2 * 5 + c].text = reels[c][(start + 2) % count];
+                currentOffsets[c] = (start + 3) % count;
+            }
 
             while (true)
             {
@@ -175,23 +212,35 @@ namespace Game.CasinoSystem
                     if (!columnStopped[c])
                     {
                         allStopped = false;
-                        for (int r = 0; r < 3; r++)
-                            slotTexts[r * 5 + c].text = symbols[UnityEngine.Random.Range(0, symbols.Length)];
+
+                        string nextSymbol = reels[c][currentOffsets[c]];
+                        currentOffsets[c] = (currentOffsets[c] + 1) % reels[c].Count;
+
+                        int top = 0 * 5 + c;
+                        int mid = 1 * 5 + c;
+                        int bot = 2 * 5 + c;
+                        slotTexts[bot].text = slotTexts[mid].text;
+                        slotTexts[mid].text = slotTexts[top].text;
+                        slotTexts[top].text = nextSymbol;
                     }
                 }
+
                 elapsed += stepTime;
                 for (int c = 0; c < 5; c++)
                 {
                     if (!columnStopped[c] && elapsed >= stopTimes[c])
                     {
                         columnStopped[c] = true;
-                        for (int r = 0; r < 3; r++)
+
+                        if (plannedFinal != null)
                         {
-                            int index = r * 5 + c;
-                            slotTexts[index].text = finalSymbols[index];
+                            slotTexts[0 * 5 + c].text = plannedFinal[0 * 5 + c];
+                            slotTexts[1 * 5 + c].text = plannedFinal[1 * 5 + c];
+                            slotTexts[2 * 5 + c].text = plannedFinal[2 * 5 + c];
                         }
                     }
                 }
+
                 if (allStopped) break;
                 yield return new WaitForSeconds(stepTime);
             }
@@ -206,34 +255,22 @@ namespace Game.CasinoSystem
                     string firstSymbol = slotTexts[line[0]].text;
                     if (line.All(index => slotTexts[index].text == firstSymbol))
                     {
-                        // ----- POCZĄTEK MODYFIKACJI -----
-
-                        // 1. Znajdź indeks zwycięskiego symbolu w tablicy `symbols`.
                         int symbolIndex = System.Array.IndexOf(symbols, firstSymbol);
-
-                        // Sprawdzenie, czy symbol został znaleziony (zabezpieczenie).
                         if (symbolIndex != -1)
                         {
-                            // 2. Pobierz mnożnik dla tego symbolu z tablicy `symbolMultipliers`.
                             int symbolMultiplier = symbolMultipliers[symbolIndex];
-
-                            // 3. Oblicz końcowy mnożnik, mnożąc mnożnik wzoru przez mnożnik symbolu.
                             float finalMultiplier = pattern.Multiplier * symbolMultiplier;
-
-                            // 4. Oblicz wygraną, używając nowego, połączonego mnożnika.
                             int winAmount = Mathf.RoundToInt(bet * finalMultiplier);
 
-                            // 5. Dodaj informacje o wygranej do listy.
                             allFoundPatterns.Add(new WinningPatternInfo
                             {
                                 PatternData = pattern,
                                 LineIndices = line,
                                 WinAmount = winAmount,
                                 HighlightColor = GetColorForPattern(pattern.Name),
-                                FinalMultiplier = finalMultiplier // Opcjonalne, do debugowania
+                                FinalMultiplier = finalMultiplier
                             });
                         }
-                        // ----- KONIEC MODYFIKACJI -----
                     }
                 }
             }
@@ -244,7 +281,6 @@ namespace Game.CasinoSystem
                 foreach (var potentialSubPattern in allFoundPatterns)
                 {
                     if (potentialSuperPattern.Equals(potentialSubPattern)) continue;
-
                     if (potentialSubPattern.LineIndices.Length < potentialSuperPattern.LineIndices.Length &&
                         potentialSubPattern.PatternData.Multiplier <= potentialSuperPattern.PatternData.Multiplier)
                     {
@@ -272,12 +308,8 @@ namespace Game.CasinoSystem
                 if (filteredPatterns.Count == 1)
                 {
                     var singleWin = filteredPatterns[0];
-                    // Zaktualizowany log, aby pokazywał końcowy mnożnik
-                    Debug.Log($"🎰 Trafiony pattern: <color=yellow>{singleWin.PatternData.Name}</color> | Końcowy mnożnik: {singleWin.FinalMultiplier}x | Wygrana: {singleWin.WinAmount}");
                     foreach (int index in singleWin.LineIndices)
-                    {
                         slotTexts[index].color = singleWin.HighlightColor;
-                    }
                 }
                 else
                 {
@@ -298,43 +330,23 @@ namespace Game.CasinoSystem
 
         private IEnumerator AnimateWinningPatterns(List<WinningPatternInfo> winningPatterns)
         {
-            var sortedPatterns = winningPatterns.OrderBy(p => p.PatternData.Multiplier).ToList();
+            var sorted = winningPatterns.OrderBy(p => p.PatternData.Multiplier).ToList();
 
-            Debug.Log($"🎰 Trafiono {sortedPatterns.Count} patternów! Rozpoczynanie animacji...");
-
-            foreach (var patternInfo in sortedPatterns)
+            foreach (var info in sorted)
             {
-                foreach (var index in patternInfo.LineIndices)
-                {
-                    slotTexts[index].color = Color.gray;
-                }
-            }
-            yield return new WaitForSeconds(0.5f);
-
-            foreach (var patternInfo in sortedPatterns)
-            {
-                foreach (int index in patternInfo.LineIndices)
-                {
-                    slotTexts[index].color = patternInfo.HighlightColor;
-                }
-
-                // Zaktualizowany log, aby pokazywał końcowy mnożnik
-                Debug.Log($" -> Pokazywanie: <color=yellow>{patternInfo.PatternData.Name}</color> | Końcowy mnożnik: {patternInfo.FinalMultiplier}x | Wygrana: {patternInfo.WinAmount}");
+                foreach (var i in info.LineIndices)
+                    slotTexts[i].color = info.HighlightColor;
 
                 yield return new WaitForSeconds(highlightDelay);
 
-                foreach (int index in patternInfo.LineIndices)
-                {
-                    slotTexts[index].color = Color.gray;
-                }
+                foreach (var i in info.LineIndices)
+                    slotTexts[i].color = Color.gray;
             }
 
-            foreach (var patternInfo in sortedPatterns)
+            foreach (var info in sorted)
             {
-                foreach (var index in patternInfo.LineIndices)
-                {
-                    slotTexts[index].color = Color.yellow;
-                }
+                foreach (var i in info.LineIndices)
+                    slotTexts[i].color = Color.yellow;
             }
         }
 
