@@ -53,7 +53,6 @@ MonoBehaviour:
   symbolPrefab: {fileID: 4662657905211353732, guid: 43b3f39b965857246a9ed37db0619539, type: 3}
   visibleSymbols: 3
   symbolHeight: 100
-  testSymbols: []
 --- !u!1 &738339505132820355
 GameObject:
   m_ObjectHideFlags: 0
@@ -1090,14 +1089,6 @@ MonoBehaviour:
   symbolPrefab: {fileID: 4662657905211353732, guid: 43b3f39b965857246a9ed37db0619539, type: 3}
   visibleSymbols: 3
   symbolHeight: 100
-  testSymbols:
-  - "\u2021"
-  - "\u2020"
-  - "\u2030"
-  - '?'
-  - '?'
-  - '?'
-  - '?'
 --- !u!1 &3473509331223004107
 GameObject:
   m_ObjectHideFlags: 0
@@ -1151,14 +1142,6 @@ MonoBehaviour:
   symbolPrefab: {fileID: 4662657905211353732, guid: 43b3f39b965857246a9ed37db0619539, type: 3}
   visibleSymbols: 3
   symbolHeight: 100
-  testSymbols:
-  - "\u2021"
-  - "\u2020"
-  - "\u2030"
-  - '?'
-  - '?'
-  - '?'
-  - '?'
 --- !u!1 &3884291473364274055
 GameObject:
   m_ObjectHideFlags: 0
@@ -1212,14 +1195,6 @@ MonoBehaviour:
   symbolPrefab: {fileID: 4662657905211353732, guid: 43b3f39b965857246a9ed37db0619539, type: 3}
   visibleSymbols: 3
   symbolHeight: 100
-  testSymbols:
-  - "\u2021"
-  - "\u2020"
-  - "\u2030"
-  - '?'
-  - '?'
-  - '?'
-  - '?'
 --- !u!1 &4201698408796632195
 GameObject:
   m_ObjectHideFlags: 0
@@ -1308,14 +1283,6 @@ MonoBehaviour:
   symbolPrefab: {fileID: 4662657905211353732, guid: 43b3f39b965857246a9ed37db0619539, type: 3}
   visibleSymbols: 3
   symbolHeight: 100
-  testSymbols:
-  - "\u2021"
-  - "\u2020"
-  - "\u2030"
-  - '?'
-  - '?'
-  - '?'
-  - '?'
 --- !u!1 &5108497412834422793
 GameObject:
   m_ObjectHideFlags: 0
@@ -1691,17 +1658,20 @@ MonoBehaviour:
   maxBet: 100
   betStep: 10
   jackpotText: {fileID: 4995475958274648116}
-  spinDuration: 1
+  spinDuration: 2
   autoSpinButton: {fileID: 8862507876365541765}
   jackpotIncrement: 10
+  autoSpinAmount: 10
+  timeAfterSpinAgain: 0.5
   highlightDelay: 1
-  forceHighMultiplierWin: 0
   reels:
   - {fileID: 8155054495752831918}
   - {fileID: 6213149086219879281}
   - {fileID: 5296840596478149464}
   - {fileID: 8214649834037358586}
   - {fileID: 1773826784220614215}
+  developerCheat: 0
+  equippedItem: {fileID: 0}
 --- !u!1 &6724304687046938952
 GameObject:
   m_ObjectHideFlags: 0

@@ -35,7 +35,7 @@ namespace Game.CasinoSystem
 
             if (PlacedBets.Count == 0)
             {
-                resultText.text = "Najpierw wybierz numer(y)!";
+                resultText.text = "Pick the numbers or number first!";
                 return;
             }
 
@@ -75,12 +75,12 @@ namespace Game.CasinoSystem
                 : PlacedBets[number] * 2;
 
             PlayerMoney += win;
-            resultText.text = $"Wypadło: {number} Wygrałeś {win} zł!";
+            resultText.text = $"The result was: {number} You won {win} PLN!";
         }
 
         private void Lose(int number)
         {
-            resultText.text = $"Wypadło: {number} Przegrałeś!";
+            resultText.text = $"The result was: {number} You lost!";
         }
 
         private void HighlightOutcome(int number, bool isWin)
@@ -97,7 +97,7 @@ namespace Game.CasinoSystem
                 PlayerMoney += PlacedBets[number];
                 PlacedBets.Remove(number);
                 betButtons[number].GetComponent<Image>().color = Color.white;
-                resultText.text = $"Usunięto zakład na numer {number}";
+                resultText.text = $"Bet on number {number} removed";
             }
             else
             {
@@ -105,17 +105,17 @@ namespace Game.CasinoSystem
                 {
                     if (betAmount == 0)
                     {
-                        resultText.text = "Nie możesz obstawić 0 zł!";
+                        resultText.text = "You cannot bet 0 PLN!";
                         return;
                     }
                     PlayerMoney -= betAmount;
                     PlacedBets[number] = betAmount;
                     betButtons[number].GetComponent<Image>().color = Color.green;
-                    resultText.text = $"Dodano zakład {betAmount} zł na numer {number}";
+                    resultText.text = $"A bet of {betAmount} PLN has been added to the number {number}";
                 }
                 else
                 {
-                    resultText.text = "Brak wystarczających środków!";
+                    resultText.text = "\r\nInsufficient funds!";
                     return;
                 }
             }
@@ -127,12 +127,12 @@ namespace Game.CasinoSystem
         {
             if (PlacedBets.Count == 0)
             {
-                betsPanelText.text = "Brak obstawień";
+                betsPanelText.text = "No bets";
                 return;
             }
-            betsPanelText.text = "Obstawienia:\n";
+            betsPanelText.text = "Bets:\n";
             foreach (var bet in PlacedBets.OrderByDescending(b => b.Value))
-                betsPanelText.text += $"Numer {bet.Key} → {bet.Value} zł\n";
+                betsPanelText.text += $"Number {bet.Key} → {bet.Value} PLN\n";
         }
 
         private void ResetButtonColors()

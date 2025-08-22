@@ -62,12 +62,12 @@ namespace Game.CasinoSystem
 
         protected void UpdateMoneyText()
         {
-            moneyText.text = $"Stan konta: {PlayerMoney:N0} zł";
+            moneyText.text = $"Account status: {PlayerMoney:N0} zł";
         }
 
         protected void UpdateBetAmountText()
         {
-            betAmountText.text = $"Zakład: {betAmount} zł";
+            betAmountText.text = $"Bet: {betAmount} zł";
         }
 
         protected virtual void DisableGameControls()

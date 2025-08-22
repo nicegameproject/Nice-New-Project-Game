@@ -104,13 +104,6 @@ public class Reel : MonoBehaviour
             rt.anchoredPosition = new Vector2(0, (i - 1) * symbolHeight);
         }
 
-        {
-            var visibles = new string[visibleSymbols];
-            for (int i = 0; i < visibleSymbols; i++)
-                visibles[i] = GetSymbol(i);
-            Debug.Log($"[Reel {gameObject.name}] Final visible: [{string.Join(", ", visibles)}]");
-        }
-
         IsStopped = true;
     }
 

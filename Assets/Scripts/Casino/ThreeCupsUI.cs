@@ -26,14 +26,14 @@ namespace Game.CasinoSystem
         {
             if (betAmount > 0 && betAmount <= PlayerMoney)
             {
-                resultText.text = "Gdzie jest pi³eczka?";
+                resultText.text = "Where is the ball?";
                 isGameInProgress = true;
                 DisableGameControls();
                 StartCoroutine(ShowBallAnimationCoroutine());
             }
             else
             {
-                resultText.text = "Zak³ad nie mo¿e wynosiæ 0 z³!";
+                resultText.text = "The bet cannot be 0 PLN!";
             }
         }
 
@@ -118,14 +118,14 @@ namespace Game.CasinoSystem
 
             SetCupButtonsInteractable(true);
             canChooseCup = true;
-            resultText.text = "Wybierz kubek!";
+            resultText.text = "Choose a cup!";
         }
 
         public void ChooseCup(int cupNumber)
         {
             if (!canChooseCup)
             {
-                resultText.text = "Musisz wybraæ zak³ad i klikn¹æ Start Game!";
+                resultText.text = "You need to select a bet and click Start Game!";
                 return;
             }
 
@@ -180,7 +180,7 @@ namespace Game.CasinoSystem
         {
             if (bet > PlayerMoney || bet <= 0 || chosenCup < 1 || chosenCup > 3)
             {
-                resultText.text = "Nieprawid³owy zak³ad lub numer kubka (1-3).";
+                resultText.text = "Invalid bet or cup number (1-3).";
                 return;
             }
 
@@ -190,11 +190,11 @@ namespace Game.CasinoSystem
             {
                 int win = bet * 2;
                 PlayerMoney += win;
-                resultText.text = $"Brawo! Pi³eczka by³a pod kubkiem {ballCup}. Wygrana: {win} z³.";
+                resultText.text = $"Bravo! The ball was under the {ballCup}. Winnings: {win} PLN.";
             }
             else
             {
-                resultText.text = $"Niestety, pi³eczka by³a pod kubkiem {ballCup}. Przegra³eœ!";
+                resultText.text = $"Unfortunately, the ball was under the {ballCup}. You lost!";
             }
             UpdateMoneyText();
         }
