@@ -17,7 +17,7 @@ namespace Game.CasinoSystem
         [SerializeField] private int jackpotIncrement = 10;
         [SerializeField] private int autoSpinAmount = 10;
         [SerializeField] private float timeAfterSpinAgain = 0.5f;
-        [SerializeField] private float highlightDelay = 1.0f;
+        [SerializeField] private float normalHighlightDelay = 0.5f;
         [SerializeField] private Reel[] reels = new Reel[5];
 
         [Header("Developer Tools")]
@@ -25,6 +25,9 @@ namespace Game.CasinoSystem
 
         [Header("Equipped Item")]
         [SerializeField] private SlotItemSO equippedItem;
+
+        [Header("Audio")]
+        [SerializeField] private SlotMachineSoundsManager soundsManager;
 
         private int jackpot = 1000;
         private readonly string[] symbols = { "‡", "†", "‰", "♣", "♦", "♥", "♠" };
@@ -138,7 +141,10 @@ namespace Game.CasinoSystem
                 forceItem.TryApply(null, null, consumeUse: true);
             }
 
-            List<Coroutine> spinning = new();
+            if (soundsManager != null) soundsManager.StartReelsLoop();
+
+            var spinning = new List<Coroutine>();
+            var reelOrder = new List<int>();
             for (int c = 0; c < reels.Length; c++)
             {
                 string[] forcedSymbols = new string[visibleSymbols];
@@ -146,8 +152,20 @@ namespace Game.CasinoSystem
                     forcedSymbols[r] = board[r * reels.Length + c];
 
                 spinning.Add(StartCoroutine(reels[c].Spin(spinDuration + c * 0.5f, symbols, forcedSymbols)));
+                reelOrder.Add(c);
             }
-            foreach (var spin in spinning) yield return spin;
+
+            for (int i = 0; i < spinning.Count; i++)
+            {
+                yield return spinning[i];
+                if (soundsManager != null)
+                {
+                    var t = reels[reelOrder[i]].transform;
+                    soundsManager.PlayReelStopAt(t.position);
+                }
+            }
+
+            if (soundsManager != null) soundsManager.StopReelsLoop();
 
             PlayerMoney -= bet;
 
@@ -179,25 +197,58 @@ namespace Game.CasinoSystem
                 }
             }
 
-            var patternsToRemove = new HashSet<WinningPatternInfo>();
-            foreach (var potentialSuperPattern in allFoundPatterns)
+            List<WinningPatternInfo> filteredPatterns;
+            bool hasJackpot = allFoundPatterns.Any(p => p.PatternData.Name == "JACKPOT");
+
+            if (hasJackpot)
             {
-                foreach (var potentialSubPattern in allFoundPatterns)
+                var allowedVertical = new List<int[]>
                 {
-                    if (potentialSuperPattern.Equals(potentialSubPattern)) continue;
-                    if (potentialSubPattern.LineIndices.Length < potentialSuperPattern.LineIndices.Length &&
-                        potentialSubPattern.PatternData.Multiplier <= potentialSuperPattern.PatternData.Multiplier)
+                    new[] {0, 5, 10},
+                    new[] {2, 7, 12},
+                    new[] {4, 9, 14}
+                };
+                var allowedDiagonal = new List<int[]>
+                {
+                    new[] {1, 7, 13},
+                    new[] {11, 7, 3}
+                };
+
+                bool IsAllowedVertical(int[] line) => allowedVertical.Any(av => av.SequenceEqual(line));
+                bool IsAllowedDiagonal(int[] line) => allowedDiagonal.Any(ad => ad.SequenceEqual(line));
+
+                filteredPatterns = allFoundPatterns.Where(p =>
+                    p.PatternData.Name == "JACKPOT" ||
+                    p.PatternData.Name == "EYE" ||
+                    p.PatternData.Name == "ABOVE" ||
+                    p.PatternData.Name == "BELOW" ||
+                    p.PatternData.Name == "HORIZONTAL-XL" ||
+                    (p.PatternData.Name == "VERTICAL" && IsAllowedVertical(p.LineIndices)) ||
+                    (p.PatternData.Name == "DIAGONAL" && IsAllowedDiagonal(p.LineIndices))
+                ).ToList();
+            }
+            else
+            {
+                var patternsToRemove = new HashSet<WinningPatternInfo>();
+                foreach (var potentialSuperPattern in allFoundPatterns)
+                {
+                    foreach (var potentialSubPattern in allFoundPatterns)
                     {
-                        var superPatternIndices = new HashSet<int>(potentialSuperPattern.LineIndices);
-                        if (potentialSubPattern.LineIndices.All(index => superPatternIndices.Contains(index)))
+                        if (potentialSuperPattern.Equals(potentialSubPattern)) continue;
+                        if (potentialSubPattern.LineIndices.Length < potentialSuperPattern.LineIndices.Length &&
+                            potentialSubPattern.PatternData.Multiplier <= potentialSuperPattern.PatternData.Multiplier)
                         {
-                            patternsToRemove.Add(potentialSubPattern);
+                            var superPatternIndices = new HashSet<int>(potentialSuperPattern.LineIndices);
+                            if (potentialSubPattern.LineIndices.All(index => superPatternIndices.Contains(index)))
+                            {
+                                patternsToRemove.Add(potentialSubPattern);
+                            }
                         }
                     }
                 }
-            }
 
-            var filteredPatterns = allFoundPatterns.Where(p => !patternsToRemove.Contains(p)).ToList();
+                filteredPatterns = allFoundPatterns.Where(p => !patternsToRemove.Contains(p)).ToList();
+            }
 
             DebugLogSpin(board, filteredPatterns, bet);
 
@@ -214,11 +265,19 @@ namespace Game.CasinoSystem
                 if (filteredPatterns.Count == 1)
                 {
                     var singleWin = filteredPatterns[0];
+
+                    if (soundsManager != null)
+                    {
+                        var oneLine = new List<int[]>(1) { singleWin.LineIndices };
+                        soundsManager.StartWinSequence(oneLine, normalHighlightDelay);
+                    }
+
                     foreach (int index in singleWin.LineIndices)
                     {
                         int reelIdx = index % 5;
                         int rowIdx = index / 5;
                         reels[reelIdx].HighlightSymbol(rowIdx, singleWin.HighlightColor);
+                        reels[reelIdx].PulseSymbol(rowIdx);
                     }
                 }
                 else
@@ -318,6 +377,17 @@ namespace Game.CasinoSystem
         {
             var sorted = winningPatterns.OrderBy(p => p.PatternData.Multiplier).ToList();
 
+            Coroutine audioRoutine = null;
+            if (soundsManager != null)
+            {
+                var lines = new List<int[]>(sorted.Count);
+                for (int i = 0; i < sorted.Count; i++)
+                    lines.Add(sorted[i].LineIndices);
+
+                audioRoutine = soundsManager.StartWinSequence(lines, normalHighlightDelay);
+            }
+
+            int step = 0;
             foreach (var info in sorted)
             {
                 foreach (var index in info.LineIndices)
@@ -325,17 +395,24 @@ namespace Game.CasinoSystem
                     int reelIdx = index % 5;
                     int rowIdx = index / 5;
                     reels[reelIdx].HighlightSymbol(rowIdx, info.HighlightColor);
+                    reels[reelIdx].PulseSymbol(rowIdx);
                 }
 
-                yield return new WaitForSeconds(highlightDelay);
+                yield return new WaitForSeconds(normalHighlightDelay);
 
                 foreach (var index in info.LineIndices)
                 {
                     int reelIdx = index % 5;
                     int rowIdx = index / 5;
+                    reels[reelIdx].StopPulse(rowIdx);
                     reels[reelIdx].HighlightSymbol(rowIdx, Color.gray);
                 }
+
+                step++;
             }
+
+            if (audioRoutine != null)
+                yield return audioRoutine;
 
             foreach (var info in sorted)
             {

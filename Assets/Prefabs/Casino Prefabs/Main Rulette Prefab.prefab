@@ -6600,7 +6600,7 @@ GameObject:
   - component: {fileID: 9203474394956928352}
   - component: {fileID: 6134312990558840569}
   m_Layer: 5
-  m_Name: Main Rulette
+  m_Name: Main Rulette Prefab
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

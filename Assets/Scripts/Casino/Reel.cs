@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using DG.Tweening;
 
 public class Reel : MonoBehaviour
 {
@@ -44,6 +45,7 @@ public class Reel : MonoBehaviour
             text.color = Color.white;
             var rt = go.GetComponent<RectTransform>();
             rt.anchoredPosition = new Vector2(0, (i - 1) * symbolHeight);
+            rt.localScale = Vector3.one; 
             symbolObjects.Add(go);
         }
 
@@ -53,6 +55,8 @@ public class Reel : MonoBehaviour
     public IEnumerator Spin(float duration, string[] availableSymbols, string[] forcedSymbols = null)
     {
         IsStopped = false;
+
+        ResetScale();
 
         int minSymbols = 51;
         int totalSymbols = ((minSymbols + visibleSymbols - 1) / visibleSymbols) * visibleSymbols;
@@ -125,5 +129,54 @@ public class Reel : MonoBehaviour
     {
         foreach (var obj in symbolObjects)
             obj.GetComponent<TextMeshProUGUI>().color = Color.white;
+    }
+
+
+    public void PulseSymbol(int row, float targetScale = 1.5f, float duration = 0.08f, Ease ease = Ease.OutCubic, int loops = -1)
+    {
+        int idx = symbolObjects.Count - visibleSymbols + row;
+        if (idx < 0 || idx >= symbolObjects.Count) return;
+
+        var rt = symbolObjects[idx].GetComponent<RectTransform>();
+
+        DOTween.Kill(rt);
+        rt.localScale = Vector3.one;
+
+        if (loops > 1)
+        {
+            rt.DOScale(targetScale, duration)
+              .SetEase(ease)
+              .SetLoops(loops, LoopType.Yoyo)
+              .SetTarget(rt);
+        }
+        else
+        {
+            float up = duration;                 
+            float down = duration * 0.1f;        
+
+            var seq = DOTween.Sequence().SetTarget(rt);
+            seq.Append(rt.DOScale(targetScale, up).SetEase(ease));     
+            seq.Append(rt.DOScale(1f, down).SetEase(Ease.InCubic));     
+        }
+    }
+
+    public void StopPulse(int row)
+    {
+        int idx = symbolObjects.Count - visibleSymbols + row;
+        if (idx < 0 || idx >= symbolObjects.Count) return;
+
+        var rt = symbolObjects[idx].GetComponent<RectTransform>();
+        DOTween.Kill(rt);
+        rt.localScale = Vector3.one;
+    }
+
+    public void ResetScale()
+    {
+        foreach (var obj in symbolObjects)
+        {
+            var rt = obj.GetComponent<RectTransform>();
+            DOTween.Kill(rt);
+            rt.localScale = Vector3.one;
+        }
     }
 }
