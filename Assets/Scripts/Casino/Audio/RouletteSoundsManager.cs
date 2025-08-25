@@ -1,19 +1,17 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 namespace Game.CasinoSystem
 {
     [DisallowMultipleComponent]
-    public class SlotMachineSoundsManager : MonoBehaviour
+    public class RouletteSoundsManager : MonoBehaviour
     {
         [Header("Clips")]
-        [SerializeField] private AudioClip reelsLoopClip;
-        [SerializeField] private AudioClip reelStopClip;
-        [SerializeField] private AudioClip singleLineWinClip;
-        [SerializeField] private AudioClip[] winSequenceClips;
-        [SerializeField] private AudioClip lostClip;
-        [SerializeField] private AudioClip pullLeverClip;
+        [SerializeField] private AudioClip spinStartClip;
+        [SerializeField] private AudioClip ruletteWheelTick;
+        [SerializeField] private AudioClip spinStopClip;
+        [SerializeField] private AudioClip winClip;
+        [SerializeField] private AudioClip loseClip;
 
         [Header("Emitter Pool")]
         [SerializeField] private GameObject emitterPrefab;
@@ -30,8 +28,8 @@ namespace Game.CasinoSystem
         private readonly Queue<AudioEmitter> pool = new Queue<AudioEmitter>();
         private readonly HashSet<AudioEmitter> active = new HashSet<AudioEmitter>();
 
-        private AudioEmitter activeReelsLoop;
-        private Coroutine winSequenceRoutine;
+        private AudioEmitter activeSpinLoop;
+        private AudioEmitter tickEmitter; // dedykowany emiter dla ticków (restart zamiast nak³adania)
 
         private void Awake()
         {
@@ -39,41 +37,53 @@ namespace Game.CasinoSystem
                 pool.Enqueue(CreateEmitter());
         }
 
-        public void StartReelsLoop()
+        // Spin
+        public void PlaySpinStart(Vector3? worldPosition = null)
         {
-            if (activeReelsLoop != null && activeReelsLoop.IsPlaying)
-                return;
-
-            if (reelsLoopClip == null) return;
-
-            activeReelsLoop = SpawnEmitter(GetSpawnPosition(null));
-            if (activeReelsLoop == null) return;
-
-            activeReelsLoop.Play(reelsLoopClip, loop: true, defaultVolume);
+            PlayOneShot(spinStartClip, worldPosition);
         }
 
-        public void StopReelsLoop()
+        public void PlayRuletteWheelTick(Vector3? worldPosition = null)
         {
-            if (activeReelsLoop == null) return;
-            activeReelsLoop.StopAndRelease();
-            activeReelsLoop = null;
+            if (ruletteWheelTick == null) return;
+
+            // restartuj bie¿¹cy tick zamiast nak³adaæ
+            if (tickEmitter != null)
+            {
+                tickEmitter.StopAndRelease();
+                // tickEmitter zostanie wyczyszczony w ReleaseEmitter
+            }
+
+            tickEmitter = SpawnEmitter(GetSpawnPosition(worldPosition));
+            if (tickEmitter == null) return;
+
+            tickEmitter.Play(ruletteWheelTick, loop: false, defaultVolume, 1f);
         }
 
-        public void PlayReelStopAt(Vector3 worldPosition)
+        public void StopSpinLoop(bool playStopSfx = true, Vector3? worldPosition = null)
         {
-            PlayOneShot(reelStopClip, worldPosition);
+            if (activeSpinLoop != null)
+            {
+                activeSpinLoop.StopAndRelease();
+                activeSpinLoop = null;
+            }
+
+            if (playStopSfx)
+                PlayOneShot(spinStopClip, worldPosition);
         }
 
-        public void PlayLeverPull()
+        // Outcome
+        public void PlayWin(Vector3? worldPosition = null)
         {
-            PlayOneShot(pullLeverClip);
+            PlayOneShot(winClip, worldPosition);
         }
 
-        public void PlayLostClip()
+        public void PlayLose(Vector3? worldPosition = null)
         {
-            PlayOneShot(lostClip);
+            PlayOneShot(loseClip, worldPosition);
         }
 
+        // Generic
         public void PlayOneShot(AudioClip clip, Vector3? worldPosition = null)
         {
             if (clip == null) return;
@@ -82,40 +92,6 @@ namespace Game.CasinoSystem
             if (emitter == null) return;
 
             emitter.Play(clip, loop: false, defaultVolume);
-        }
-
-        public Coroutine StartWinSequence(IList<int[]> linesPerPattern, float stepDelay)
-        {
-            StopWinSequence();
-            winSequenceRoutine = StartCoroutine(PlayWinSequenceCo(linesPerPattern, stepDelay));
-            return winSequenceRoutine;
-        }
-
-        public void StopWinSequence()
-        {
-            if (winSequenceRoutine != null)
-            {
-                StopCoroutine(winSequenceRoutine);
-                winSequenceRoutine = null;
-            }
-        }
-
-        public IEnumerator PlayWinSequenceCo(IList<int[]> linesPerPattern, float stepDelay)
-        {
-            if (linesPerPattern == null || linesPerPattern.Count == 0) yield break;
-
-            for (int i = 0; i < linesPerPattern.Count; i++)
-            {
-                AudioClip clip = (winSequenceClips != null && winSequenceClips.Length > 0)
-                    ? winSequenceClips[Mathf.Min(i, winSequenceClips.Length - 1)]
-                    : singleLineWinClip;
-
-                PlayOneShot(clip);
-
-                yield return new WaitForSeconds(stepDelay);
-            }
-
-            winSequenceRoutine = null;
         }
 
         private Vector3 GetSpawnPosition(Vector3? requested)
@@ -177,6 +153,9 @@ namespace Game.CasinoSystem
         private void ReleaseEmitter(AudioEmitter emitter)
         {
             if (emitter == null) return;
+
+            if (emitter == tickEmitter) tickEmitter = null;
+
             if (active.Contains(emitter)) active.Remove(emitter);
 
             var go = emitter.gameObject;

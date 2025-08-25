@@ -30,7 +30,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 375965584182231817}
-  m_Father: {fileID: 8909214671113864236}
+  m_Father: {fileID: 3199411832559329623}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -463,6 +463,46 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!1 &2480416541233153022
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3199411832559329623}
+  m_Layer: 5
+  m_Name: Reels
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &3199411832559329623
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2480416541233153022}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 9183811967980336011}
+  - {fileID: 378841157876825998}
+  - {fileID: 8547461279058268137}
+  - {fileID: 1069030129816762874}
+  - {fileID: 9023237997502755427}
+  m_Father: {fileID: 8909214671113864236}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &2571548721722256577
 GameObject:
   m_ObjectHideFlags: 0
@@ -529,6 +569,8 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 95bbaea67df831b41960c2c5491dec84, type: 3}
   - {fileID: 8300000, guid: 88617539d8fd4d04f8743af27338f651, type: 3}
   - {fileID: 8300000, guid: 3f024d05c79f1ab428edc8e08c008db6, type: 3}
+  lostClip: {fileID: 8300000, guid: e87a92a0f58189f469917ef2779dd28b, type: 3}
+  pullLeverClip: {fileID: 8300000, guid: e71ae3d02af9455458205507a24f53eb, type: 3}
   emitterPrefab: {fileID: 2882959906733780265, guid: 4359ba9c0e0dc5544826bdccad3421f0, type: 3}
   emittersContainer: {fileID: 8408317153138979385}
   spawnOrigin: {fileID: 2321495264002857057}
@@ -1140,7 +1182,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6104013262257099715}
-  m_Father: {fileID: 8909214671113864236}
+  m_Father: {fileID: 3199411832559329623}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -1193,7 +1235,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1851438814264642058}
-  m_Father: {fileID: 8909214671113864236}
+  m_Father: {fileID: 3199411832559329623}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -1246,7 +1288,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 6524915405921530596}
-  m_Father: {fileID: 8909214671113864236}
+  m_Father: {fileID: 3199411832559329623}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -1334,7 +1376,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1495413605047735112}
-  m_Father: {fileID: 8909214671113864236}
+  m_Father: {fileID: 3199411832559329623}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -1725,11 +1767,7 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 9183811967980336011}
-  - {fileID: 378841157876825998}
-  - {fileID: 8547461279058268137}
-  - {fileID: 1069030129816762874}
-  - {fileID: 9023237997502755427}
+  - {fileID: 3199411832559329623}
   - {fileID: 583771176970930694}
   - {fileID: 6561500630236436888}
   - {fileID: 6044541184315327295}
@@ -1780,6 +1818,7 @@ MonoBehaviour:
   - {fileID: 5296840596478149464}
   - {fileID: 8214649834037358586}
   - {fileID: 1773826784220614215}
+  leverHandle: {fileID: 0}
   developerCheat: 0
   equippedItem: {fileID: 0}
   soundsManager: {fileID: 6900412761092908165}

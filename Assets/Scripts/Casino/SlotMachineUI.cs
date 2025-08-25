@@ -5,6 +5,7 @@ using System.Text;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using DG.Tweening;
 
 namespace Game.CasinoSystem
 {
@@ -19,6 +20,7 @@ namespace Game.CasinoSystem
         [SerializeField] private float timeAfterSpinAgain = 0.5f;
         [SerializeField] private float normalHighlightDelay = 0.5f;
         [SerializeField] private Reel[] reels = new Reel[5];
+        [SerializeField] private Transform leverHandle;
 
         [Header("Developer Tools")]
         [SerializeField] private bool developerCheat = false;
@@ -84,24 +86,51 @@ namespace Game.CasinoSystem
 
         public override void PlayGame()
         {
+            StartCoroutine(PlayGameRoutine());
+        }
+
+        private IEnumerator PlayGameRoutine()
+        {
             if (betAmount > PlayerMoney)
             {
                 resultText.text = "You don't have enough money!";
-                return;
+                yield break;
             }
+
             isGameInProgress = true;
             DisableGameControls();
-            StartCoroutine(SpinSlots(betAmount, true));
+
+            yield return StartCoroutine(AnimateLever());
+
+            yield return StartCoroutine(SpinSlots(betAmount, true));
+        }
+
+        private IEnumerator AnimateLever()
+        {
+            if (leverHandle == null) yield break;
+
+            if (soundsManager != null)
+                soundsManager.PlayLeverPull();
+
+            float downDuration = 0.15f;
+            float upDuration = 0.2f;
+            float downAngle = -100f;
+
+            Sequence seq = DOTween.Sequence()
+                .Append(leverHandle.DORotate(new Vector3(downAngle, 0, 0), downDuration).SetEase(Ease.InQuad))
+                .Append(leverHandle.DORotate(new Vector3(-30, 0, 0), upDuration).SetEase(Ease.OutQuad));
+
+            yield return seq.WaitForCompletion();
         }
 
         public void OnAutoSpinClicked()
         {
             isGameInProgress = true;
             DisableGameControls();
-            StartCoroutine(AutoSpin(autoSpinAmount));
+            StartCoroutine(DeveloperCheatAutoSpin(autoSpinAmount));
         }
 
-        private IEnumerator AutoSpin(int count)
+        private IEnumerator DeveloperCheatAutoSpin(int count)
         {
             for (int i = 0; i < count; i++)
             {
@@ -110,16 +139,21 @@ namespace Game.CasinoSystem
                     resultText.text = "You don't have enough money for more spins!!";
                     break;
                 }
+
+                // (Opcjonalnie) animacja dźwigni przed każdym automatycznym spinem
+                yield return StartCoroutine(AnimateLever());
+
                 yield return StartCoroutine(SpinSlots(betAmount, false));
                 yield return new WaitForSeconds(timeAfterSpinAgain);
             }
+
             isGameInProgress = false;
             EnableGameControls();
         }
 
         private IEnumerator SpinSlots(int bet, bool endSpinOnFinish)
         {
-            resultText.text = "";
+            resultText.text = "XXXX";
 
             RebuildRuntimeSymbolMultipliers(consumeUse: true);
 
@@ -255,12 +289,13 @@ namespace Game.CasinoSystem
             if (filteredPatterns.Count == 0)
             {
                 resultText.text = "You lost!";
+                soundsManager.PlayLostClip();
             }
             else
             {
                 int totalWin = filteredPatterns.Sum(p => p.WinAmount);
                 PlayerMoney += totalWin;
-                resultText.text = $"You won! Total winnings: {totalWin:N0} zł.";
+                resultText.text = $"You won! {totalWin:N0} zł.";
 
                 if (filteredPatterns.Count == 1)
                 {

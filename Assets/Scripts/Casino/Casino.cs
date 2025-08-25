@@ -29,12 +29,12 @@ namespace Game.CasinoSystem
         {
             UpdateBetAmountText();
             UpdateMoneyText();
-            resultText.text = "";
+            resultText.text = "XXXX";
         }
 
         protected virtual void OnEnable()
         {
-            resultText.text = "";
+            resultText.text = "XXXX";
             UpdateMoneyText();
             UpdateBetAmountText();
             EnableGameControls();
@@ -62,7 +62,7 @@ namespace Game.CasinoSystem
 
         protected void UpdateMoneyText()
         {
-            moneyText.text = $"Account status: {PlayerMoney:N0} zł";
+            moneyText.text = $"Money: {PlayerMoney:N0} zł";
         }
 
         protected void UpdateBetAmountText()

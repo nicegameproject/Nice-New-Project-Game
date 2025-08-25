@@ -132,7 +132,7 @@ public class Reel : MonoBehaviour
     }
 
 
-    public void PulseSymbol(int row, float targetScale = 1.5f, float duration = 0.08f, Ease ease = Ease.OutCubic, int loops = -1)
+    public void PulseSymbol(int row, float targetScale = 1.75f, float duration = 0.08f, Ease ease = Ease.OutCubic, int loops = -1)
     {
         int idx = symbolObjects.Count - visibleSymbols + row;
         if (idx < 0 || idx >= symbolObjects.Count) return;
