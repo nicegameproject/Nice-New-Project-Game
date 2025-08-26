@@ -801,7 +801,7 @@ MonoBehaviour:
   totalSlots: 16
   extraSpins: 5
   rouletteSoundsManager: {fileID: 1930250953817850712}
-  cullEveryOtherAtHighSpeed: 1
+  cullEveryOtherAtHighSpeed: 0
   highSpeedThresholdDegPerSec: 250
   lowSpeedThresholdDegPerSec: 200
 --- !u!1 &2209448175489491627
@@ -2401,7 +2401,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8073884614455484241
 Transform:
   m_ObjectHideFlags: 0
@@ -3026,7 +3026,7 @@ GameObject:
   - component: {fileID: 3064377062162579736}
   - component: {fileID: 1930250953817850712}
   m_Layer: 5
-  m_Name: SlotMachineSoundsManager
+  m_Name: RuletteSoundsManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -3061,11 +3061,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 496c89dac4c50ac498a71497048d2059, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  spinStartClip: {fileID: 8300000, guid: e71ae3d02af9455458205507a24f53eb, type: 3}
   ruletteWheelTick: {fileID: 8300000, guid: 21f8f780cc3308743bf1af153f465880, type: 3}
-  spinStopClip: {fileID: 8300000, guid: 26f28b96971773e4aafacc4c70b594a3, type: 3}
-  winClip: {fileID: 8300000, guid: 96d60f4246e238f4187f4a112c90efee, type: 3}
-  loseClip: {fileID: 8300000, guid: e87a92a0f58189f469917ef2779dd28b, type: 3}
+  winClip: {fileID: 8300000, guid: 9f8b3f128585d9249b67311ad08a2de4, type: 3}
+  loseClip: {fileID: 8300000, guid: fbe547ee4a9e7554c9f0d6e0773f9db6, type: 3}
   emitterPrefab: {fileID: 2882959906733780265, guid: 4359ba9c0e0dc5544826bdccad3421f0, type: 3}
   emittersContainer: {fileID: 921519836060881258}
   spawnOrigin: {fileID: 935626069733587904}

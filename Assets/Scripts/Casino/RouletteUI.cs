@@ -46,8 +46,6 @@ namespace Game.CasinoSystem
             if (betButtons != null)
                 foreach (var btn in betButtons) btn.onClick.RemoveAllListeners();
 
-            if (sounds != null) sounds.StopSpinLoop(false);
-
             isPlayerReady = false;
             if (autoSpinRoutine != null)
             {
@@ -123,16 +121,8 @@ namespace Game.CasinoSystem
 
         private IEnumerator RandomSpin()
         {
-            if (sounds != null)
-            {
-                sounds.PlaySpinStart();
-            }
-
             int randomResultNumber = Random.Range(0, 16);
             yield return StartCoroutine(rouletteWheel.Spin(randomResultNumber));
-
-            if (sounds != null)
-                sounds.StopSpinLoop(true);
 
             bool anyBets = PlacedBets.Count > 0;
             bool isWin = anyBets && PlacedBets.ContainsKey(randomResultNumber);
@@ -177,6 +167,7 @@ namespace Game.CasinoSystem
 
         private void NoBetSpin(int number)
         {
+            if (sounds != null) sounds.PlayLose();
             resultText.text = $"The result was: {number} No bets placed.";
         }
 

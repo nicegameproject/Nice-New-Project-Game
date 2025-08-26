@@ -4,12 +4,10 @@ using UnityEngine;
 namespace Game.CasinoSystem
 {
     [DisallowMultipleComponent]
-    public class RouletteSoundsManager : MonoBehaviour
+    public class ThreeCupsSoundsManager : MonoBehaviour
     {
         [Header("Clips")]
-        [SerializeField] private AudioClip ruletteWheelTick;
-        [SerializeField] private AudioClip winClip;
-        [SerializeField] private AudioClip loseClip;
+        [SerializeField] private AudioClip wooshClip;
 
         [Header("Emitter Pool")]
         [SerializeField] private GameObject emitterPrefab;
@@ -22,12 +20,10 @@ namespace Game.CasinoSystem
 
         [Header("Audio Defaults")]
         [SerializeField] private float defaultVolume = 1f;
+        [SerializeField] private Vector2 pitchRange = new(0.95f, 1.05f);
 
         private readonly Queue<AudioEmitter> pool = new Queue<AudioEmitter>();
         private readonly HashSet<AudioEmitter> active = new HashSet<AudioEmitter>();
-
-        private AudioEmitter activeSpinLoop;
-        private AudioEmitter tickEmitter; // dedykowany emiter dla ticków (restart zamiast nak³adania)
 
         private void Awake()
         {
@@ -35,43 +31,25 @@ namespace Game.CasinoSystem
                 pool.Enqueue(CreateEmitter());
         }
 
-        public void PlayRuletteWheelTick(Vector3? worldPosition = null)
+        public void PlayShuffleWoosh(Vector3? worldPosition = null)
         {
-            if (ruletteWheelTick == null) return;
+            if (wooshClip == null) return;
 
-            // restartuj bie¿¹cy tick zamiast nak³adaæ
-            if (tickEmitter != null)
-            {
-                tickEmitter.StopAndRelease();
-                // tickEmitter zostanie wyczyszczony w ReleaseEmitter
-            }
+            var emitter = SpawnEmitter(GetSpawnPosition(worldPosition));
+            if (emitter == null) return;
 
-            tickEmitter = SpawnEmitter(GetSpawnPosition(worldPosition));
-            if (tickEmitter == null) return;
-
-            tickEmitter.Play(ruletteWheelTick, loop: false, defaultVolume, 1f);
+            float pitch = Mathf.Clamp(Random.Range(pitchRange.x, pitchRange.y), 0.01f, 3f);
+            emitter.Play(wooshClip, loop: false, defaultVolume, pitch);
         }
 
-        // Outcome
-        public void PlayWin(Vector3? worldPosition = null)
-        {
-            PlayOneShot(winClip, worldPosition);
-        }
-
-        public void PlayLose(Vector3? worldPosition = null)
-        {
-            PlayOneShot(loseClip, worldPosition);
-        }
-
-        // Generic
-        public void PlayOneShot(AudioClip clip, Vector3? worldPosition = null)
+        public void PlayOneShot(AudioClip clip, Vector3? worldPosition = null, float pitch = 1f)
         {
             if (clip == null) return;
 
             var emitter = SpawnEmitter(GetSpawnPosition(worldPosition));
             if (emitter == null) return;
 
-            emitter.Play(clip, loop: false, defaultVolume);
+            emitter.Play(clip, loop: false, defaultVolume, pitch);
         }
 
         private Vector3 GetSpawnPosition(Vector3? requested)
@@ -133,8 +111,6 @@ namespace Game.CasinoSystem
         private void ReleaseEmitter(AudioEmitter emitter)
         {
             if (emitter == null) return;
-
-            if (emitter == tickEmitter) tickEmitter = null;
 
             if (active.Contains(emitter)) active.Remove(emitter);
 
