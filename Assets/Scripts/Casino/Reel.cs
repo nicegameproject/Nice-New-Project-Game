@@ -1,58 +1,67 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using DG.Tweening;
 
 public class Reel : MonoBehaviour
 {
     [SerializeField] private RectTransform symbolsContainer;
-    [SerializeField] private GameObject symbolPrefab;
+    [SerializeField] private GameObject symbolPrefab; 
     [SerializeField] private int visibleSymbols = 3;
     [SerializeField] private float symbolHeight = 100f;
-    private readonly string[] testSymbols = { "‡", "†", "‰", "♣", "♦", "♥", "♠" };
+    [SerializeField] private Sprite[] testSprites;
 
     private List<GameObject> symbolObjects = new List<GameObject>();
-    private List<string> symbols = new List<string>();
+    private List<Sprite> symbolSprites = new List<Sprite>();
     public bool IsStopped { get; private set; }
 
     private void Start()
     {
-        GenerateSymbols(testSymbols, 51);
+        if (testSprites != null && testSprites.Length > 0)
+            GenerateSymbols(testSprites, 51);
     }
 
-    public void GenerateSymbols(string[] availableSymbols, int totalSymbols)
+    public void GenerateSymbols(Sprite[] availableSymbols, int totalSymbols)
     {
         if (availableSymbols == null || availableSymbols.Length == 0)
         {
-            Debug.LogError("Tablica symboli jest pusta! Nie można wygenerować symboli.");
+            Debug.LogError("Tablica sprite’ów jest pusta! Nie można wygenerować symboli.");
             return;
         }
 
         foreach (var obj in symbolObjects)
             Destroy(obj);
         symbolObjects.Clear();
-        symbols.Clear();
+        symbolSprites.Clear();
 
         for (int i = 0; i < totalSymbols; i++)
         {
-            string symbol = availableSymbols[Random.Range(0, availableSymbols.Length)];
-            symbols.Add(symbol);
+            Sprite sprite = availableSymbols[Random.Range(0, availableSymbols.Length)];
+            symbolSprites.Add(sprite);
 
             var go = Instantiate(symbolPrefab, symbolsContainer);
-            var text = go.GetComponent<TextMeshProUGUI>();
-            text.text = symbol;
-            text.color = Color.white;
+            var img = go.GetComponent<Image>();
+            if (img == null)
+            {
+                Debug.LogError("symbolPrefab nie posiada komponentu Image.");
+                Destroy(go);
+                continue;
+            }
+            img.sprite = sprite;
+            img.color = Color.white;
+
             var rt = go.GetComponent<RectTransform>();
             rt.anchoredPosition = new Vector2(0, (i - 1) * symbolHeight);
-            rt.localScale = Vector3.one; 
+            rt.localScale = Vector3.one;
+
             symbolObjects.Add(go);
         }
 
         symbolsContainer.anchoredPosition = Vector2.zero;
     }
 
-    public IEnumerator Spin(float duration, string[] availableSymbols, string[] forcedSymbols = null)
+    public IEnumerator Spin(float duration, Sprite[] availableSymbols, Sprite[] forcedSymbols = null)
     {
         IsStopped = false;
 
@@ -70,15 +79,18 @@ public class Reel : MonoBehaviour
 
             for (int i = 0; i < visibleSymbols; i++)
             {
-                string sym = i < forcedSymbols.Length ? forcedSymbols[i] : availableSymbols[0];
+                Sprite spr = i < forcedSymbols.Length ? forcedSymbols[i] : availableSymbols[0];
                 int idx = totalSymbols - visibleSymbols + i;
 
-                if (idx >= 0 && idx < symbols.Count) symbols[idx] = sym;
+                if (idx >= 0 && idx < symbolSprites.Count) symbolSprites[idx] = spr;
                 if (idx >= 0 && idx < symbolObjects.Count)
                 {
-                    var tmp = symbolObjects[idx].GetComponent<TextMeshProUGUI>();
-                    tmp.text = sym;
-                    tmp.color = Color.white;
+                    var img = symbolObjects[idx].GetComponent<Image>();
+                    if (img != null)
+                    {
+                        img.sprite = spr;
+                        img.color = Color.white;
+                    }
                 }
             }
         }
@@ -111,26 +123,30 @@ public class Reel : MonoBehaviour
         IsStopped = true;
     }
 
-    public string GetSymbol(int row)
+    public Sprite GetSymbol(int row)
     {
         int idx = symbolObjects.Count - visibleSymbols + row;
-        if (idx < 0 || idx >= symbolObjects.Count) return "";
-        return symbolObjects[idx].GetComponent<TextMeshProUGUI>().text;
+        if (idx < 0 || idx >= symbolObjects.Count) return null;
+        var img = symbolObjects[idx].GetComponent<Image>();
+        return img != null ? img.sprite : null;
     }
 
     public void HighlightSymbol(int row, Color color)
     {
         int idx = symbolObjects.Count - visibleSymbols + row;
         if (idx < 0 || idx >= symbolObjects.Count) return;
-        symbolObjects[idx].GetComponent<TextMeshProUGUI>().color = color;
+        var img = symbolObjects[idx].GetComponent<Image>();
+        if (img != null) img.color = color;
     }
 
     public void ResetHighlight()
     {
         foreach (var obj in symbolObjects)
-            obj.GetComponent<TextMeshProUGUI>().color = Color.white;
+        {
+            var img = obj.GetComponent<Image>();
+            if (img != null) img.color = Color.white;
+        }
     }
-
 
     public void PulseSymbol(int row, float targetScale = 1.75f, float duration = 0.08f, Ease ease = Ease.OutCubic, int loops = -1)
     {
@@ -151,12 +167,12 @@ public class Reel : MonoBehaviour
         }
         else
         {
-            float up = duration;                 
-            float down = duration * 0.1f;        
+            float up = duration;
+            float down = duration * 0.1f;
 
             var seq = DOTween.Sequence().SetTarget(rt);
-            seq.Append(rt.DOScale(targetScale, up).SetEase(ease));     
-            seq.Append(rt.DOScale(1f, down).SetEase(Ease.InCubic));     
+            seq.Append(rt.DOScale(targetScale, up).SetEase(ease));
+            seq.Append(rt.DOScale(1f, down).SetEase(Ease.InCubic));
         }
     }
 

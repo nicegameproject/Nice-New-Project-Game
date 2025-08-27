@@ -167,7 +167,6 @@ namespace Game.CasinoSystem
             if (perp.sqrMagnitude < 1e-6f) perp = Vector3.right;
             perp.Normalize();
 
-            // Stały kierunek obejścia (brak losowości)
             const float sideSign = 1f;
 
             Vector3 mid = (aStart + bStart) * 0.5f;
@@ -327,10 +326,12 @@ namespace Game.CasinoSystem
             {
                 int win = bet * 2;
                 PlayerMoney += win;
+                sounds?.PlayWin();
                 resultText.text = $"Bravo! The ball was under cup {ballCup}. Winnings: {win} PLN.";
             }
             else
             {
+                sounds?.PlayLose();
                 resultText.text = $"Unfortunately, the ball was under cup {ballCup}. You lost!";
             }
             UpdateMoneyText();

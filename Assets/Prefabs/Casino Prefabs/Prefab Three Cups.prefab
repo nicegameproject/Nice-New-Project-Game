@@ -597,7 +597,7 @@ Transform:
   m_GameObject: {fileID: 4239247897508991570}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0.32, z: -7.69}
+  m_LocalPosition: {x: 0, y: 0.32, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1275,7 +1275,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &1629708867742334777
 Transform:
   m_ObjectHideFlags: 0
@@ -1508,15 +1508,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   wooshClip: {fileID: 8300000, guid: 21f8f780cc3308743bf1af153f465880, type: 3}
-  emitterPrefab: {fileID: 2882959906733780265, guid: 4359ba9c0e0dc5544826bdccad3421f0, type: 3}
-  emittersContainer: {fileID: 0}
-  spawnOrigin: {fileID: 0}
-  spawnRadius: 0.25
-  initialPoolSize: 8
-  maxPoolSize: 32
-  expandIfNeeded: 1
-  defaultVolume: 1
-  pitchRange: {x: 0.95, y: 1.05}
+  winClip: {fileID: 8300000, guid: 96d60f4246e238f4187f4a112c90efee, type: 3}
+  loseClip: {fileID: 8300000, guid: fbe547ee4a9e7554c9f0d6e0773f9db6, type: 3}
+  emittersContainer: {fileID: 7990574977079406210}
+  spawnOrigin: {fileID: 9207971359615135023}
 --- !u!1 &9149420267798484369
 GameObject:
   m_ObjectHideFlags: 0

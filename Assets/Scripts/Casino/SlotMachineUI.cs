@@ -32,9 +32,11 @@ namespace Game.CasinoSystem
         [SerializeField] private SlotMachineSoundsManager soundsManager;
 
         private int jackpot = 1000;
-        private readonly string[] symbols = { "‡", "†", "‰", "♣", "♦", "♥", "♠" };
-        private readonly int[] symbolMultipliers = { 1, 2, 3, 4, 5, 6, 7 };
-        private readonly float[] chanceToShow = { 19.4f, 19.4f, 14.9f, 14.9f, 11.9f, 11.9f, 7.6f };
+
+        [Header("Symbols")]
+        [SerializeField] private Sprite[] symbols; // przypisz w Inspektorze w kolejności zgodnej z mnożnikami i szansami
+        [SerializeField] private int[] symbolMultipliers = { 1, 2, 3, 4, 5, 6, 7 };
+        [SerializeField] private float[] chanceToShow = { 19.4f, 19.4f, 14.9f, 14.9f, 11.9f, 11.9f, 7.6f };
 
         // Runtime copies modified by the equipped item on each spin.
         private int[] runtimeSymbolMultipliers;
@@ -66,9 +68,13 @@ namespace Game.CasinoSystem
             RebuildRuntimeSymbolMultipliers(consumeUse: false);
             UpdateJackpotText();
 
-            if (symbols.Length != runtimeChanceToShow.Length || symbols.Length != runtimeSymbolMultipliers.Length)
+            if (symbols == null || symbols.Length == 0)
             {
-                Debug.LogError("The number of symbols, their multipliers and chances of appearing must be the same!");
+                Debug.LogError("Brak Sprite’ów symboli przypisanych w inspektorze.");
+            }
+            else if (symbols.Length != runtimeChanceToShow.Length || symbols.Length != runtimeSymbolMultipliers.Length)
+            {
+                Debug.LogError("Liczba Sprite’ów, mnożników i szans musi być taka sama!");
             }
         }
 
@@ -140,7 +146,6 @@ namespace Game.CasinoSystem
                     break;
                 }
 
-                // (Opcjonalnie) animacja dźwigni przed każdym automatycznym spinem
                 yield return StartCoroutine(AnimateLever());
 
                 yield return StartCoroutine(SpinSlots(betAmount, false));
@@ -160,9 +165,10 @@ namespace Game.CasinoSystem
             int visibleSymbols = 3;
             int totalSymbols = reels.Length * visibleSymbols;
 
-            string[] board = new string[totalSymbols];
+            // plansza jako indeksy do tablicy Sprite[]
+            int[] board = new int[totalSymbols];
             for (int i = 0; i < totalSymbols; i++)
-                board[i] = symbols[GetRandomSymbolIndexBasedOnChance()];
+                board[i] = GetRandomSymbolIndexBasedOnChance();
 
             if (developerCheat)
             {
@@ -181,9 +187,13 @@ namespace Game.CasinoSystem
             var reelOrder = new List<int>();
             for (int c = 0; c < reels.Length; c++)
             {
-                string[] forcedSymbols = new string[visibleSymbols];
+                Sprite[] forcedSymbols = new Sprite[visibleSymbols];
                 for (int r = 0; r < visibleSymbols; r++)
-                    forcedSymbols[r] = board[r * reels.Length + c];
+                {
+                    int idx = r * reels.Length + c;
+                    int symbolIndex = board[idx];
+                    forcedSymbols[r] = symbols[symbolIndex];
+                }
 
                 spinning.Add(StartCoroutine(reels[c].Spin(spinDuration + c * 0.5f, symbols, forcedSymbols)));
                 reelOrder.Add(c);
@@ -208,25 +218,21 @@ namespace Game.CasinoSystem
             {
                 foreach (var line in pattern.Lines)
                 {
-                    string firstSymbol = board[line[0]];
-                    if (line.All(index => board[index] == firstSymbol))
+                    int firstIndex = board[line[0]];
+                    if (line.All(index => board[index] == firstIndex))
                     {
-                        int symbolIndex = System.Array.IndexOf(symbols, firstSymbol);
-                        if (symbolIndex != -1)
-                        {
-                            int symbolMultiplier = runtimeSymbolMultipliers[symbolIndex];
-                            float finalMultiplier = pattern.Multiplier * symbolMultiplier;
-                            int winAmount = Mathf.RoundToInt(bet * finalMultiplier);
+                        int symbolMultiplier = runtimeSymbolMultipliers[firstIndex];
+                        float finalMultiplier = pattern.Multiplier * symbolMultiplier;
+                        int winAmount = Mathf.RoundToInt(bet * finalMultiplier);
 
-                            allFoundPatterns.Add(new WinningPatternInfo
-                            {
-                                PatternData = pattern,
-                                LineIndices = line,
-                                WinAmount = winAmount,
-                                HighlightColor = GetColorForPattern(pattern.Name),
-                                FinalMultiplier = finalMultiplier
-                            });
-                        }
+                        allFoundPatterns.Add(new WinningPatternInfo
+                        {
+                            PatternData = pattern,
+                            LineIndices = line,
+                            WinAmount = winAmount,
+                            HighlightColor = GetColorForPattern(pattern.Name),
+                            FinalMultiplier = finalMultiplier
+                        });
                     }
                 }
             }
@@ -393,18 +399,18 @@ namespace Game.CasinoSystem
             patterns = patterns.OrderBy(p => p.Multiplier).ToList();
         }
 
-        private void ForceHighMultiplierPattern(string[] board)
+        private void ForceHighMultiplierPattern(int[] board)
         {
             var eligible = patterns.Where(p => p.Multiplier >= 7.0f).ToList();
             if (eligible.Count == 0) return;
 
             var chosenPattern = eligible[Random.Range(0, eligible.Count)];
             var chosenLine = chosenPattern.Lines[Random.Range(0, chosenPattern.Lines.Length)];
-            string chosenSymbol = symbols[GetRandomSymbolIndexBasedOnChance()];
+            int chosenIndex = GetRandomSymbolIndexBasedOnChance();
 
             foreach (var idx in chosenLine)
             {
-                board[idx] = chosenSymbol;
+                board[idx] = chosenIndex;
             }
         }
 
@@ -484,7 +490,7 @@ namespace Game.CasinoSystem
             jackpotText.text = $"Jackpot: {jackpot:N0} zł";
         }
 
-        private void DebugLogSpin(string[] board, List<WinningPatternInfo> winningPatterns, int bet)
+        private void DebugLogSpin(int[] board, List<WinningPatternInfo> winningPatterns, int bet)
         {
             var sb = new StringBuilder();
             sb.AppendLine("[Slot] Final board");
@@ -498,9 +504,12 @@ namespace Game.CasinoSystem
 
             foreach (var wp in winningPatterns.OrderByDescending(p => p.FinalMultiplier))
             {
-                string symbol = board[wp.LineIndices[0]];
+                int symbolIndex = board[wp.LineIndices[0]];
+                string symbolName = symbols != null && symbols.Length > symbolIndex && symbols[symbolIndex] != null
+                    ? symbols[symbolIndex].name
+                    : $"#{symbolIndex}";
                 sb.AppendLine(
-                    $"- {wp.PatternData.Name} x{wp.PatternData.Multiplier:0.##} | Symbol '{symbol}' | Final Multiplier x{wp.FinalMultiplier:0.##} | Win {wp.WinAmount}"
+                    $"- {wp.PatternData.Name} x{wp.PatternData.Multiplier:0.##} | Symbol '{symbolName}' | Final Multiplier x{wp.FinalMultiplier:0.##} | Win {wp.WinAmount}"
                 );
             }
 
