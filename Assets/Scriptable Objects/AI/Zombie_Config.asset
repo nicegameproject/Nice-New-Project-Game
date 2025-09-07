@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a70200c41cb891349ba73ea56f547c64, type: 3}
+  m_Name: Zombie_Config
+  m_EditorClassIdentifier: 
+  WalkSpeed: 0.35
+  RunSpeed: 4
+  FleeSpeed: 3
+  Acceleration: 30
+  AngularSpeed: 360
+  StoppingDistance: 1
+  RepathIntervalPatrol: 3
+  RepathIntervalChase: 0.25
+  ViewDistance: 10
+  ViewAngle: 60
+  VisionObstacles:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  SuspicionGainPerSecond: 0.75
+  SuspicionLossPerSecond: 0.5
+  LostSightDelay: 1.25
+  HearingRadius: 12
+  IdleMinTime: 3
+  IdleMaxTime: 5
+  SearchDuration: 6
+  SearchRadius: 20
+  PreferredAttackRange: 1.5
+  AttackMode: 0
+  MeleeAttacks:
+  - Id: Melee
+    Range: 2
+    Cooldown: 1
+    Windup: 0.2
+    Damage: 3
+    HitRadius: 1
+    HitMask:
+      serializedVersion: 2
+      m_Bits: 0
+  RangedAttacks: []
+  FleeHealthThreshold: 0.2
+  FleeDistance: 12
+  DrawGizmos: 1
