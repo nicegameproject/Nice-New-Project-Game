@@ -16,9 +16,9 @@ public sealed class SpawnState : IAIState
 
     public void Enter()
     {
-        _timer = 0.1f;
-        _ai.Locomotion.StopImmediate();
+        _timer = 2f;
         _ai.Animation.PlayIdle();
+        _ai.Locomotion.StopImmediate();    
     }
 
     public void Update()
@@ -32,6 +32,6 @@ public sealed class SpawnState : IAIState
 
     public void Exit()
     {
-        
+        _ai.Animation.ResetIdleAnimation();
     }
 }

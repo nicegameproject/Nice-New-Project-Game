@@ -12,33 +12,32 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a70200c41cb891349ba73ea56f547c64, type: 3}
   m_Name: Mouse_Config
   m_EditorClassIdentifier: 
-  WalkSpeed: 2
+  WalkSpeed: 1.5
   RunSpeed: 4
   FleeSpeed: 5
   Acceleration: 8
   AngularSpeed: 360
-  StoppingDistance: 1
-  RepathIntervalPatrol: 5
+  StoppingDistance: 0.5
+  RepathIntervalPatrol: 3
   RepathIntervalChase: 0.25
-  ViewDistance: 15
-  ViewAngle: 30
+  ViewDistance: 10
+  ViewAngle: 100
   VisionObstacles:
     serializedVersion: 2
     m_Bits: 4294967295
-  SuspicionGainPerSecond: 0.75
+  SuspicionGainPerSecond: 1
   SuspicionLossPerSecond: 0.5
   LostSightDelay: 1.25
   HearingRadius: 12
-  IdleMinTime: 10
-  IdleMaxTime: 15
-  SearchDuration: 10
+  IdleMinTime: 6
+  IdleMaxTime: 7
+  SearchDuration: 8
   SearchRadius: 20
-  PreferredAttackRange: 2
+  PreferredAttackRange: 1.3
   AttackMode: 0
   MeleeAttacks:
   - Id: Melee
-    Range: 2
-    Cooldown: 1
+    Cooldown: 2
     Windup: 0.2
     Damage: 3
     HitRadius: 1

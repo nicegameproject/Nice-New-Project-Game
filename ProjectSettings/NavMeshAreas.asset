@@ -109,10 +109,10 @@ NavMeshProjectSettings:
       m_Flags: 0
   - serializedVersion: 3
     agentTypeID: -1923039037
-    agentRadius: 0.3
+    agentRadius: 0.75
     agentHeight: 1.8
-    agentSlope: 0
-    agentClimb: 0.001
+    agentSlope: 5
+    agentClimb: 0.25
     ledgeDropHeight: 0
     maxJumpAcrossDistance: 0
     minRegionArea: 2
@@ -127,10 +127,10 @@ NavMeshProjectSettings:
       m_Flags: 0
   - serializedVersion: 3
     agentTypeID: -902729914
-    agentRadius: 0.2
-    agentHeight: 0.65
-    agentSlope: 2
-    agentClimb: 0.1
+    agentRadius: 0.5
+    agentHeight: 0.75
+    agentSlope: 5
+    agentClimb: 0.25
     ledgeDropHeight: 0
     maxJumpAcrossDistance: 0
     minRegionArea: 2
@@ -146,5 +146,5 @@ NavMeshProjectSettings:
   m_SettingNames:
   - Humanoid
   - Zombie Clown
-  - Zombie
+  - Mannequin
   - Mouse

@@ -85,7 +85,7 @@ public class Health : MonoBehaviour, IDamageable
 
         _ai.Locomotion.Resume();
         _ai.Locomotion.SetSpeedWalk();
-        _ai.Animation.PlayWalk();
+        _ai.Animation.PlayIdle();
     }
 
     [ContextMenu("Apply Damage")]

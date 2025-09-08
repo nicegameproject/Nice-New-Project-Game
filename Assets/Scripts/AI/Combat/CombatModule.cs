@@ -13,14 +13,13 @@ public class CombatModule : MonoBehaviour
         _cooldowns.Clear();
         if (_config == null) return;
 
-        if (_config.AttackMode == EnemyAttackMode.Melee)
+        var meleeList = _config.MeleeAttacks;
+        if (meleeList == null) return;
+
+        for (int i = 0; i < meleeList.Count; i++)
         {
-            foreach (var a in _config.MeleeAttacks)
-                _cooldowns[a.Id] = 0f;
-        }
-        else
-        {
-            foreach (var a in _config.RangedAttacks)
+            var a = meleeList[i];
+            if (a != null && !string.IsNullOrEmpty(a.Id))
                 _cooldowns[a.Id] = 0f;
         }
     }
@@ -46,32 +45,17 @@ public class CombatModule : MonoBehaviour
         selected = null;
         if (_config == null) return false;
 
-        if (_config.AttackMode == EnemyAttackMode.Melee)
+        var list = _config.MeleeAttacks;
+        if (list == null || list.Count == 0) return false;
+
+        for (int i = 0; i < list.Count; i++)
         {
-            var list = _config.MeleeAttacks;
-            if (list == null || list.Count == 0) return false;
-            for (int i = 0; i < list.Count; i++)
+            var a = list[i];
+            if (a == null) continue;
+            if (distance <= _config.PreferredAttackRange && GetCooldown(a.Id) <= 0f)
             {
-                var a = list[i];
-                if (distance <= a.Range && GetCooldown(a.Id) <= 0f)
-                {
-                    selected = a;
-                    return true;
-                }
-            }
-        }
-        else
-        {
-            var list = _config.RangedAttacks;
-            if (list == null || list.Count == 0) return false;
-            for (int i = 0; i < list.Count; i++)
-            {
-                var a = list[i];
-                if (distance <= a.Range && GetCooldown(a.Id) <= 0f)
-                {
-                    selected = a;
-                    return true;
-                }
+                selected = a;
+                return true;
             }
         }
         return false;
@@ -88,15 +72,16 @@ public class CombatModule : MonoBehaviour
             flatDir.y = 0f;
             float planarDistance = flatDir.magnitude;
 
-            if (planarDistance <= Mathf.Max(0.1f, melee.HitRadius) + 0.05f)
+            float radius = Mathf.Max(0.1f, melee.HitRadius);
+
+            if (planarDistance <= radius)
             {
                 TryApplyDamageSingle(target, melee.Damage);
             }
             else
             {
                 flatDir.Normalize();
-                float castDistance = Mathf.Min(planarDistance, melee.Range);
-                float radius = Mathf.Max(0.1f, melee.HitRadius);
+                float castDistance = Mathf.Min(planarDistance, _config != null ? _config.PreferredAttackRange : planarDistance);
 
                 if (Physics.SphereCast(origin, radius, flatDir, out var hit, castDistance, melee.HitMask, QueryTriggerInteraction.Ignore))
                 {
@@ -108,26 +93,16 @@ public class CombatModule : MonoBehaviour
                 }
                 else
                 {
-                    if (planarDistance <= melee.Range)
+                    if (_config == null || planarDistance <= _config.PreferredAttackRange)
                     {
                         TryApplyDamageSingle(target, melee.Damage);
                     }
                 }
             }
         }
-        else if (attack is RangedAttackDefinition ranged)
+        else
         {
-            if (ranged.ProjectilePrefab != null)
-            {
-                Vector3 spawnPos = transform.position + Vector3.up * 1.4f;
-                Vector3 targetPos = target.position + Vector3.up * 1.2f;
-                var go = GameObject.Instantiate(ranged.ProjectilePrefab, spawnPos, Quaternion.LookRotation(targetPos - spawnPos));
-                var rb = go.GetComponent<Rigidbody>();
-                if (rb != null)
-                {
-                    rb.linearVelocity = go.transform.forward * ranged.ProjectileSpeed;
-                }
-            }
+            return;
         }
 
         SetCooldown(attack.Id, attack.Cooldown);

@@ -22,10 +22,10 @@ public sealed class SearchState : IAIState
     {
         _timer = 0f;
         _repathTimer = 0f;
-        _ai.Locomotion.SetSpeedWalk();
-        _ai.Locomotion.SetStoppingDistance(0f);
-        _ai.Locomotion.Resume();
         _ai.Animation.PlayWalk();
+        _ai.Locomotion.SetSpeedWalk();
+        _ai.Locomotion.Resume();
+     
 
         _currentSearchPoint = _bb.LastKnownTargetPos;
         _ai.Locomotion.SetDestination(_currentSearchPoint);

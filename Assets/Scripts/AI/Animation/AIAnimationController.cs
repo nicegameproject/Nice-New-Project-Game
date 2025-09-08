@@ -15,9 +15,10 @@ public class AIAnimationController : MonoBehaviour
     private static readonly int HashDeath = Animator.StringToHash("Death");
     private static readonly int HashWalk = Animator.StringToHash("Walk");
     private static readonly int HashRun = Animator.StringToHash("Run");
+    private static readonly int HashIdle = Animator.StringToHash("Idle");
     private static readonly int HashTaunt = Animator.StringToHash("Taunt");
     private static readonly int HashTakeHit = Animator.StringToHash("TakeHit");
-    private static readonly int HashHitVariant = Animator.StringToHash("HitVariant"); 
+    private static readonly int HashHitVariant = Animator.StringToHash("HitVariant");
 
     void Awake()
     {
@@ -51,13 +52,13 @@ public class AIAnimationController : MonoBehaviour
     public void PlayTakeHit()
     {
         if (_isDead) return;
-        if (_animator == null) return;   
+        if (_animator == null) return;
 
         var info = _animator.GetCurrentAnimatorStateInfo(0);
         if ((info.IsName("TakeHit") || info.IsName("TakeHit2")) && info.normalizedTime < 0.8f)
             return;
 
-        int variant = Random.Range(0, 2); 
+        int variant = Random.Range(0, 2);
         _animator.SetInteger(HashHitVariant, variant);
         SetTrigger(HashTakeHit);
     }
@@ -89,7 +90,9 @@ public class AIAnimationController : MonoBehaviour
         {
             case MovementAnimState.Walk: SetTrigger(HashWalk); break;
             case MovementAnimState.Run: SetTrigger(HashRun); break;
-            case MovementAnimState.Idle:
+            case MovementAnimState.Idle: SetTrigger(HashIdle); break;
+            case MovementAnimState.None:
+
                 break;
         }
 
@@ -103,11 +106,26 @@ public class AIAnimationController : MonoBehaviour
         _animator.SetTrigger(hash);
     }
 
-#if UNITY_EDITOR
+    private void ResetTriggerAnimation(int hash)
+    {
+        if (_animator == null) return;
+        _animator.ResetTrigger(hash);
+    }
+
+    public void ResetIdleAnimation()
+    {
+        ResetTriggerAnimation(HashIdle);
+    }
+
+    public void ResetWalkAnimation()
+    {
+        ResetTriggerAnimation(HashWalk);
+    }
+
     private void OnValidate()
     {
         if (_animator == null)
             _animator = GetComponentInChildren<Animator>();
     }
-#endif
+
 }

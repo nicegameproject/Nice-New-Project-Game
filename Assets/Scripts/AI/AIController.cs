@@ -28,7 +28,6 @@ public class AIController : MonoBehaviour
     {
         var agent = GetComponent<NavMeshAgent>();
         Locomotion = GetComponent<AILocomotion>();
-        if (Locomotion == null) Locomotion = gameObject.AddComponent<AILocomotion>();
         Locomotion.Initialize(agent);
 
         Animation = GetComponent<AIAnimationController>();

@@ -17,10 +17,10 @@ public sealed class IdleState : IAIState
 
     public void Enter()
     {
-        _ai.Locomotion.SetSpeedToZero();
-        _ai.Locomotion.SetStoppingDistance(0f);
-        _ai.Locomotion.StopImmediate();
         _ai.Animation.PlayIdle();
+        _ai.Locomotion.SetSpeedToZero();
+        _ai.Locomotion.StopImmediate();
+    
 
         _targetIdleTime = Random.Range(_ai.Config.IdleMinTime, _ai.Config.IdleMaxTime);
         _idleTimer = 0f;

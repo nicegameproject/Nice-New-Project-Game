@@ -7,8 +7,6 @@ public sealed class PatrolState : IAIState
     private readonly Blackboard _bb;
 
     private float _repathTimer;
-    private float _waitTimer;
-    private float _waitDuration;
 
     private Vector3 _wanderCenter;
     private float _wanderRadius;
@@ -24,14 +22,12 @@ public sealed class PatrolState : IAIState
 
     public void Enter()
     {
-        _ai.Locomotion.SetSpeedWalk();
-        _ai.Locomotion.SetStoppingDistance(0f);
-        _ai.Locomotion.Resume();
         _ai.Animation.PlayWalk();
+        _ai.Locomotion.SetSpeedWalk();
+        _ai.Locomotion.Resume();
+       
 
         _repathTimer = 0f;
-        _waitTimer = 0f;
-        _waitDuration = 0f;
 
         _wanderCenter = _ai.transform.position;
         _wanderRadius = _ai.Config != null ? _ai.Config.SearchRadius : 6f;
@@ -51,14 +47,9 @@ public sealed class PatrolState : IAIState
             return;
         }
 
-        if (_waitDuration > 0f)
+        if (_ai.Locomotion.HasReachedDestination())
         {
-            _waitTimer += Time.deltaTime;
-            if (_waitTimer >= _waitDuration)
-            {
-                _waitDuration = 0f;
-                SetNextRandomDestination();
-            }
+            _ai.StateMachine.ChangeState(new IdleState(_ai, _bb));
             return;
         }
 
@@ -70,17 +61,11 @@ public sealed class PatrolState : IAIState
                 SetNextRandomDestination();
             }
         }
-
-        if (_ai.Locomotion.HasReachedDestination())
-        {
-            _waitDuration = Random.Range(0.5f, 1.5f);
-            _waitTimer = 0f;
-        }
     }
 
     public void Exit()
     {
-    
+        _ai.Animation.ResetWalkAnimation();
     }
 
     private void SetNextRandomDestination()

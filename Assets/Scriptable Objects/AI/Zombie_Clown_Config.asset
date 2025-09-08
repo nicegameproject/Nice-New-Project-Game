@@ -17,7 +17,7 @@ MonoBehaviour:
   FleeSpeed: 5
   Acceleration: 20
   AngularSpeed: 360
-  StoppingDistance: 1
+  StoppingDistance: 0.5
   RepathIntervalPatrol: 3
   RepathIntervalChase: 0.25
   ViewDistance: 15
@@ -25,15 +25,15 @@ MonoBehaviour:
   VisionObstacles:
     serializedVersion: 2
     m_Bits: 4294967295
-  SuspicionGainPerSecond: 0.75
+  SuspicionGainPerSecond: 1
   SuspicionLossPerSecond: 0.5
   LostSightDelay: 1.25
   HearingRadius: 12
-  IdleMinTime: 5
-  IdleMaxTime: 10
+  IdleMinTime: 3
+  IdleMaxTime: 5
   SearchDuration: 10
   SearchRadius: 25
-  PreferredAttackRange: 1.5
+  PreferredAttackRange: 2
   AttackMode: 0
   MeleeAttacks:
   - Id: Melee

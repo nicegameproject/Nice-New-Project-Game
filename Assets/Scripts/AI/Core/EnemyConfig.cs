@@ -38,7 +38,7 @@ public class EnemyConfig : ScriptableObject
     public EnemyAttackMode AttackMode = EnemyAttackMode.Melee;
 
     public List<MeleeAttackDefinition> MeleeAttacks = new List<MeleeAttackDefinition>();
-    public List<RangedAttackDefinition> RangedAttacks = new List<RangedAttackDefinition>();
+    //public List<RangedAttackDefinition> RangedAttacks = new List<RangedAttackDefinition>();
 
     [Header("Flee")]
     public float FleeHealthThreshold = 0.2f;
@@ -58,7 +58,6 @@ public enum EnemyAttackMode
 public abstract class AttackDefinitionBase
 {
     public string Id = "Attack";
-    public float Range = 2.0f;
     public float Cooldown = 1.0f;
     public float Windup = 0.2f;
     public float Damage = 10f;

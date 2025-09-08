@@ -21,7 +21,7 @@ public sealed class FleeState : IAIState
         _repathTimer = 0f;
         _ai.Locomotion.SetSpeedFlee();
         _ai.Locomotion.Resume();
-        _ai.Animation.PlayWalk();
+        _ai.Animation.PlayRun();
 
         Vector3 fleePoint = ComputeFleePoint();
         _ai.Locomotion.SetDestination(fleePoint);

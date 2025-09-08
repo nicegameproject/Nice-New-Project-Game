@@ -84,7 +84,7 @@ public class AILocomotion : MonoBehaviour
     {
         if (_agent == null) return true;
         if (_agent.pathPending) return false;
-        return _agent.remainingDistance <= _agent.stoppingDistance + 0.05f;
+        return _agent.remainingDistance <= _agent.stoppingDistance;
     }
 
     public void FaceTowards(Vector3 position, float turnSpeed = 720f)

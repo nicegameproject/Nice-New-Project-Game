@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public sealed class AttackState : IAIState
@@ -6,7 +7,7 @@ public sealed class AttackState : IAIState
     private readonly Blackboard _bb;
 
     private AttackDefinitionBase _currentAttack;
-    private float _windupOrRetryTimer;
+    private Coroutine _routine;
 
     public string Name => "Attack";
 
@@ -18,85 +19,157 @@ public sealed class AttackState : IAIState
 
     public void Enter()
     {
+        _ai.Locomotion.SetStoppingDistance(_ai.Config.PreferredAttackRange);
         _ai.Locomotion.StopImmediate();
         _ai.Locomotion.SetSpeedToZero();
-        _ai.Locomotion.SetStoppingDistance(_ai.Config.PreferredAttackRange);
-
         _ai.Locomotion.Agent.updateRotation = false;
 
-        if (_ai.Combat.TrySelectAttack(_bb.DistanceToTarget, out _currentAttack))
+        _ai.Combat.TrySelectAttack(_bb.DistanceToTarget, out _currentAttack);
+
+        _routine = _ai.StartCoroutine(AttackRoutine());
+    }
+
+    public void Update() { }
+
+    public void Exit()
+    {
+        if (_routine != null)
         {
-            _windupOrRetryTimer = _currentAttack.Windup;
-            _ai.Animation.PlayAttack();
+            _ai.StopCoroutine(_routine);
+            _routine = null;
         }
-        else
+
+        _ai.Locomotion.SetStoppingDistance(_ai.Config.StoppingDistance);
+        _ai.Locomotion.Agent.updateRotation = true;
+    }
+
+    private IEnumerator AttackRoutine()
+    {
+        while (true)
         {
+            FaceTargetFast();
+
+            IAIState pendingTransition;
+            if (CheckTransitions(out pendingTransition, effectiveRangeOverride: GetEffectiveRange(), onlyWhenNotAttacking: true))
+            {
+                DoTransition(pendingTransition);
+                yield break;
+            }
+
+            if (_currentAttack == null)
+            {
+                _ai.Combat.TrySelectAttack(_bb.DistanceToTarget, out _currentAttack);
+
+                if (_currentAttack == null)
+                {
+                    yield return WaitWithChecks(0.1f);
+                    if (!IsThisStateCurrent()) yield break;
+                    continue;
+                }
+            }
+
+            _ai.Animation.PlayAttack();
+
+            float windup = Mathf.Max(0f, _currentAttack.Windup);
+            if (windup > 0f)
+                yield return WaitWithChecks(windup);
+
+            if (!IsThisStateCurrent()) yield break;
+
+            if (_bb.Target != null)
+                _ai.Combat.ExecuteAttack(_currentAttack, _bb.Target);
+
+            while (_ai.Animation.IsAttackPlaying())
+            {
+                FaceTargetFast();
+
+                if (CheckTransitions(out pendingTransition, effectiveRangeOverride: GetEffectiveRange(), onlyWhenNotAttacking: false))
+                {
+                    DoTransition(pendingTransition);
+                    yield break;
+                }
+
+                yield return null;
+                if (!IsThisStateCurrent()) yield break;
+            }
+
+            yield return WaitWithChecks(0.05f);
+            if (!IsThisStateCurrent()) yield break;
+
             _currentAttack = null;
-            _windupOrRetryTimer = 0.1f;
         }
     }
 
-    public void Update()
+    private IEnumerator WaitWithChecks(float duration)
+    {
+        float t = 0f;
+        while (t < duration)
+        {
+            FaceTargetFast();
+
+            IAIState next;
+            if (CheckTransitions(out next, effectiveRangeOverride: GetEffectiveRange(), onlyWhenNotAttacking: !_ai.Animation.IsAttackPlaying()))
+            {
+                DoTransition(next);
+                yield break;
+            }
+
+            t += Time.deltaTime;
+            yield return null;
+
+            if (!IsThisStateCurrent())
+                yield break;
+        }
+    }
+
+    private float GetEffectiveRange()
+    {
+        return _ai.Config.PreferredAttackRange;
+    }
+
+    private void FaceTargetFast()
     {
         if (_bb.Target != null)
             _ai.Locomotion.FaceTowards(_bb.Target.position, 1080f);
+    }
 
-        float effectiveRange = _currentAttack != null ? _currentAttack.Range : _ai.Config.PreferredAttackRange;
+    private bool CheckTransitions(out IAIState next, float effectiveRangeOverride, bool onlyWhenNotAttacking)
+    {
+        next = null;
 
-        _windupOrRetryTimer -= Time.deltaTime;
-        if (_windupOrRetryTimer <= 0f)
+        if (_bb.IsDead)
         {
-            if (_currentAttack != null)
-            {
-                _ai.Combat.ExecuteAttack(_currentAttack, _bb.Target);
-                _currentAttack = null;
-            }
-
-            if (!_ai.Animation.IsAttackPlaying())
-            {
-                if (_ai.Combat.TrySelectAttack(_bb.DistanceToTarget, out _currentAttack))
-                {
-                    _windupOrRetryTimer = _currentAttack.Windup;
-                    _ai.Animation.PlayAttack();
-                }
-                else
-                {
-                    _windupOrRetryTimer = 0.1f;
-                }
-            }
-            else
-            {
-                _windupOrRetryTimer = 0.05f;
-            }
-        }
-
-        if (!_ai.Animation.IsAttackPlaying())
-        {
-            if (!_bb.HasLineOfSight || _bb.DistanceToTarget > effectiveRange + 0.5f)
-            {
-                _ai.Locomotion.Agent.updateRotation = true;
-                _ai.StateMachine.ChangeState(new ChaseState(_ai, _bb));
-                return;
-            }
+            next = new DeathState(_ai, _bb);
+            return true;
         }
 
         if (ShouldFlee())
         {
-            _ai.Locomotion.Agent.updateRotation = true;
-            _ai.StateMachine.ChangeState(new FleeState(_ai, _bb));
-            return;
+            next = new FleeState(_ai, _bb);
+            return true;
         }
 
-        if (_bb.IsDead)
+        if (onlyWhenNotAttacking && !_ai.Animation.IsAttackPlaying())
         {
-            _ai.Locomotion.Agent.updateRotation = true;
-            _ai.StateMachine.ChangeState(new DeathState(_ai, _bb));
+            if (!_bb.HasLineOfSight || _bb.DistanceToTarget > effectiveRangeOverride)
+            {
+                next = new ChaseState(_ai, _bb);
+                return true;
+            }
         }
+
+        return false;
     }
 
-    public void Exit()
+    private void DoTransition(IAIState next)
     {
         _ai.Locomotion.Agent.updateRotation = true;
+        _ai.StateMachine.ChangeState(next);
+    }
+
+    private bool IsThisStateCurrent()
+    {
+        return ReferenceEquals(_ai.StateMachine.Current, this);
     }
 
     private bool ShouldFlee()
