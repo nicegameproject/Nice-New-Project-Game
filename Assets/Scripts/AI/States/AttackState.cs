@@ -19,7 +19,7 @@ public sealed class AttackState : IAIState
 
     public void Enter()
     {
-        _ai.Locomotion.SetStoppingDistance(_ai.Config.PreferredAttackRange);
+        _ai.Locomotion.SetStoppingDistance(_ai.Config.PreferredAttackRange + 0.05f);
         _ai.Locomotion.StopImmediate();
         _ai.Locomotion.SetSpeedToZero();
         _ai.Locomotion.Agent.updateRotation = false;
@@ -105,8 +105,6 @@ public sealed class AttackState : IAIState
         float t = 0f;
         while (t < duration)
         {
-            FaceTargetFast();
-
             IAIState next;
             if (CheckTransitions(out next, effectiveRangeOverride: GetEffectiveRange(), onlyWhenNotAttacking: !_ai.Animation.IsAttackPlaying()))
             {
@@ -129,15 +127,24 @@ public sealed class AttackState : IAIState
 
     private void FaceTargetFast()
     {
-        if (_bb.Target != null)
-            _ai.Locomotion.FaceTowards(_bb.Target.position, 1080f);
+        if (_currentAttack != null && _currentAttack.Id == "Laser Attack")
+        {
+            if (_bb.Target != null)
+                _ai.Locomotion.FaceTowards(_bb.Target.position, 10f);
+        }
+        else
+        {
+            if (_bb.Target != null)
+                _ai.Locomotion.FaceTowards(_bb.Target.position, 200f);
+        }
+
     }
 
     private bool CheckTransitions(out IAIState next, float effectiveRangeOverride, bool onlyWhenNotAttacking)
     {
         next = null;
 
-        if (_bb.IsDead)
+        if (_ai.Health.IsDead)
         {
             next = new DeathState(_ai, _bb);
             return true;
@@ -174,7 +181,7 @@ public sealed class AttackState : IAIState
 
     private bool ShouldFlee()
     {
-        float hpPct = Mathf.Approximately(_bb.MaxHealth, 0f) ? 0f : (_bb.CurrentHealth / _bb.MaxHealth);
-        return hpPct <= _ai.Config.FleeHealthThreshold && !_bb.IsDead;
+        float hpPct = Mathf.Approximately(_ai.Health.Max, 0f) ? 0f : (_ai.Health.Current / _ai.Health.Max);
+        return hpPct <= _ai.Config.FleeHealthThreshold && !_ai.Health.IsDead;
     }
 }

@@ -15,16 +15,16 @@ MonoBehaviour:
   WalkSpeed: 0.5
   RunSpeed: 5
   FleeSpeed: 5
-  Acceleration: 20
-  AngularSpeed: 360
+  Acceleration: 10
+  AngularSpeed: 200
   StoppingDistance: 0.5
   RepathIntervalPatrol: 3
   RepathIntervalChase: 0.25
   ViewDistance: 15
-  ViewAngle: 100
+  ViewAngle: 55
   VisionObstacles:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 128
   SuspicionGainPerSecond: 1
   SuspicionLossPerSecond: 0.5
   LostSightDelay: 1.25
@@ -35,17 +35,34 @@ MonoBehaviour:
   SearchRadius: 25
   PreferredAttackRange: 2
   AttackMode: 0
-  MeleeAttacks:
-  - Id: Melee
-    Range: 2
-    Cooldown: 2
+  MeleeAttack:
+    Id: Attack
+    AttackCooldown: 1
     Windup: 0.2
-    Damage: 5
+    Damage: 10
     HitRadius: 1
-    HitMask:
-      serializedVersion: 2
-      m_Bits: 0
-  RangedAttacks: []
+  RangeAttacks:
+    Id: Attack
+    AttackCooldown: 1
+    Windup: 0.2
+    Damage: 10
+    ProjectilePrefab: {fileID: 0}
+    ProjectileSpeed: 20
+  ExplosionAttacks:
+    Id: Attack
+    AttackCooldown: 1
+    Windup: 0.2
+    Damage: 10
+    ExplosionRadius: 5
+    ExplosionVfxPrefab: {fileID: 0}
+    VfxLifetime: 3
+  LaserAttack:
+    Id: Attack
+    AttackCooldown: 1
+    Windup: 0.2
+    Damage: 10
+    LaserPrefab: {fileID: 0}
+    Duration: 2
   FleeHealthThreshold: 0.2
   FleeDistance: 12
   DrawGizmos: 1

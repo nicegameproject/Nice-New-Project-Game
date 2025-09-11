@@ -20,7 +20,6 @@ public sealed class DeathState : IAIState
         _ai.Animation.PlayDeath();
         _ai.Locomotion.StopImmediate();
         if (_ai.Locomotion.Agent != null) _ai.Locomotion.Agent.enabled = false;
-      
     }
 
     public void Update()

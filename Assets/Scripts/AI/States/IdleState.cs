@@ -20,7 +20,6 @@ public sealed class IdleState : IAIState
         _ai.Animation.PlayIdle();
         _ai.Locomotion.SetSpeedToZero();
         _ai.Locomotion.StopImmediate();
-    
 
         _targetIdleTime = Random.Range(_ai.Config.IdleMinTime, _ai.Config.IdleMaxTime);
         _idleTimer = 0f;
@@ -50,7 +49,7 @@ public sealed class IdleState : IAIState
             return;
         }
 
-        if (_bb.IsDead)
+        if (_ai.Health.IsDead)
         {
             _ai.StateMachine.ChangeState(new DeathState(_ai, _bb));
         }
@@ -60,7 +59,7 @@ public sealed class IdleState : IAIState
 
     private bool ShouldFlee()
     {
-        float hpPct = Mathf.Approximately(_bb.MaxHealth, 0f) ? 0f : (_bb.CurrentHealth / _bb.MaxHealth);
-        return hpPct <= _ai.Config.FleeHealthThreshold && !_bb.IsDead;
+        float hpPct = Mathf.Approximately(_ai.Health.Max, 0f) ? 0f : (_ai.Health.Current / _ai.Health.Max);
+        return hpPct <= _ai.Config.FleeHealthThreshold && !_ai.Health.IsDead;
     }
 }

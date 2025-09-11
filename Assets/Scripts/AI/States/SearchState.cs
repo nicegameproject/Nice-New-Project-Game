@@ -25,7 +25,6 @@ public sealed class SearchState : IAIState
         _ai.Animation.PlayWalk();
         _ai.Locomotion.SetSpeedWalk();
         _ai.Locomotion.Resume();
-     
 
         _currentSearchPoint = _bb.LastKnownTargetPos;
         _ai.Locomotion.SetDestination(_currentSearchPoint);
@@ -65,16 +64,13 @@ public sealed class SearchState : IAIState
             return;
         }
 
-        if (_bb.IsDead)
+        if (_ai.Health.IsDead)
         {
             _ai.StateMachine.ChangeState(new DeathState(_ai, _bb));
         }
     }
 
-    public void Exit()
-    {
-
-    }
+    public void Exit() { }
 
     private Vector3 RandomPointInRadius(Vector3 center, float radius)
     {
@@ -87,7 +83,7 @@ public sealed class SearchState : IAIState
 
     private bool ShouldFlee()
     {
-        float hpPct = Mathf.Approximately(_bb.MaxHealth, 0f) ? 0f : (_bb.CurrentHealth / _bb.MaxHealth);
-        return hpPct <= _ai.Config.FleeHealthThreshold && !_bb.IsDead;
+        float hpPct = Mathf.Approximately(_ai.Health.Max, 0f) ? 0f : (_ai.Health.Current / _ai.Health.Max);
+        return hpPct <= _ai.Config.FleeHealthThreshold && !_ai.Health.IsDead;
     }
 }

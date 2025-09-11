@@ -13,18 +13,18 @@ MonoBehaviour:
   m_Name: Mouse_Config
   m_EditorClassIdentifier: 
   WalkSpeed: 1.5
-  RunSpeed: 4
-  FleeSpeed: 5
-  Acceleration: 8
-  AngularSpeed: 360
+  RunSpeed: 3
+  FleeSpeed: 3
+  Acceleration: 10
+  AngularSpeed: 200
   StoppingDistance: 0.5
   RepathIntervalPatrol: 3
   RepathIntervalChase: 0.25
   ViewDistance: 10
-  ViewAngle: 100
+  ViewAngle: 70
   VisionObstacles:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 128
   SuspicionGainPerSecond: 1
   SuspicionLossPerSecond: 0.5
   LostSightDelay: 1.25
@@ -33,18 +33,36 @@ MonoBehaviour:
   IdleMaxTime: 7
   SearchDuration: 8
   SearchRadius: 20
-  PreferredAttackRange: 1.3
-  AttackMode: 0
-  MeleeAttacks:
-  - Id: Melee
-    Cooldown: 2
+  PreferredAttackRange: 1.35
+  AttackMode: 2
+  MeleeAttack:
+    Id: Melee
+    AttackCooldown: 1
     Windup: 0.2
-    Damage: 3
+    Damage: 10
     HitRadius: 1
-    HitMask:
-      serializedVersion: 2
-      m_Bits: 0
-  RangedAttacks: []
+  RangeAttacks:
+    Id: Range
+    AttackCooldown: 1
+    Windup: 0.2
+    Damage: 10
+    ProjectilePrefab: {fileID: 0}
+    ProjectileSpeed: 20
+  ExplosionAttacks:
+    Id: Explosion
+    AttackCooldown: 1
+    Windup: 0.2
+    Damage: 10
+    ExplosionRadius: 5
+    ExplosionVfxPrefab: {fileID: 1544155806044888537, guid: ea35a28631aa6f8498a5f948e0a9a64b, type: 3}
+    VfxLifetime: 3
+  LaserAttack:
+    Id: Attack
+    AttackCooldown: 1
+    Windup: 0.2
+    Damage: 10
+    LaserPrefab: {fileID: 0}
+    Duration: 2
   FleeHealthThreshold: 0.2
   FleeDistance: 12
   DrawGizmos: 1

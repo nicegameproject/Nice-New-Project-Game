@@ -43,9 +43,9 @@ public sealed class FleeState : IAIState
             return;
         }
 
-        if (_bb.IsDead)
+        if (_ai.Health.IsDead)
         {
-            _ai.StateMachine.ChangeState(new DeathState(_ai, _bb));
+           _ai.StateMachine.ChangeState(new DeathState(_ai, _bb));
         }
     }
 

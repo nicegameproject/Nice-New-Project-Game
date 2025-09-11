@@ -11,9 +11,6 @@ public class AIController : MonoBehaviour
     [Header("Debug")]
     public bool DebugStates = true;
 
-    [Header("References")]
-    public Transform Target;
-
     public AILocomotion Locomotion { get; private set; }
     public AIAnimationController Animation { get; private set; }
     public VisionSensor Vision { get; private set; }
@@ -23,6 +20,8 @@ public class AIController : MonoBehaviour
 
     public Blackboard Blackboard { get; private set; }
     public AIStateMachine StateMachine { get; private set; }
+
+    private bool _deathHandled;
 
     void Awake()
     {
@@ -61,14 +60,15 @@ public class AIController : MonoBehaviour
         }
 
         Blackboard.Reset();
-        Blackboard.Target = Target;
 
         StateMachine.ChangeState(new SpawnState(this, Blackboard));
     }
 
     void Update()
     {
-        if (Blackboard.IsDead) return;
+        if (Health != null && Health.IsDead) return;
+
+        Hearing.PullHeardInfo(Blackboard);
 
         Vision.Tick(Blackboard);
         Hearing.Tick(Blackboard);
@@ -78,7 +78,8 @@ public class AIController : MonoBehaviour
 
     public void OnDeath()
     {
-        Blackboard.IsDead = true;
+        if (_deathHandled) return;
+        _deathHandled = true;
         StateMachine.ChangeState(new DeathState(this, Blackboard));
     }
 }

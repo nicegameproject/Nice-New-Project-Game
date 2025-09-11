@@ -21,8 +21,8 @@ public sealed class ChaseState : IAIState
         _lostTimer = 0f;
 
         _ai.Animation.PlayRun();
-        _ai.Locomotion.SetSpeedRun();      
-        _ai.Locomotion.Resume();      
+        _ai.Locomotion.SetSpeedRun();
+        _ai.Locomotion.Resume();
     }
 
     public void Update()
@@ -66,19 +66,17 @@ public sealed class ChaseState : IAIState
             return;
         }
 
-        if (_bb.IsDead)
+        if (_ai.Health.IsDead)
         {
             _ai.StateMachine.ChangeState(new DeathState(_ai, _bb));
         }
     }
 
-    public void Exit()
-    {
-    }
+    public void Exit() { }
 
     private bool ShouldFlee()
     {
-        float hpPct = Mathf.Approximately(_bb.MaxHealth, 0f) ? 0f : (_bb.CurrentHealth / _bb.MaxHealth);
-        return hpPct <= _ai.Config.FleeHealthThreshold && !_bb.IsDead;
+        float hpPct = Mathf.Approximately(_ai.Health.Max, 0f) ? 0f : (_ai.Health.Current / _ai.Health.Max);
+        return hpPct <= _ai.Config.FleeHealthThreshold && !_ai.Health.IsDead;
     }
 }

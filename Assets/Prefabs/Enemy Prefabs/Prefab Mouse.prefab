@@ -18,7 +18,7 @@ GameObject:
   - component: {fileID: 2590446646227247328}
   - component: {fileID: 6202437371973682117}
   - component: {fileID: 3547340193951081723}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Prefab Mouse
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -50,7 +50,7 @@ NavMeshAgent:
   m_GameObject: {fileID: 3884628301145941342}
   m_Enabled: 1
   m_AgentTypeID: -902729914
-  m_Radius: 0.5
+  m_Radius: 0.55
   m_Speed: 3.5
   m_Acceleration: 8
   avoidancePriority: 50
@@ -77,7 +77,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Config: {fileID: 11400000, guid: ff94e4dde96791945a69901b7dced4f0, type: 2}
   DebugStates: 1
-  Target: {fileID: 0}
 --- !u!114 &1754244332993373357
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -139,6 +138,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0406f0951246ce84a9910954288e30a0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  shootPoint: {fileID: 0}
 --- !u!114 &6202437371973682117
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -151,8 +151,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a62e883418c5c943899e1fb0880c4dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _maxHealth: 100
-  _current: 0
+  _healthTemplate: {fileID: 11400000, guid: 90fcbf1983c5e0e4ca27171354d29bce, type: 2}
+  _logHealthChanges: 1
+  _currentHealthInspector: 0
+  _maxHealthInspector: 0
+  _healthPercentInspector: 0
 --- !u!114 &3547340193951081723
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -167,6 +170,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   CircleSegments: 48
   CircleYOffset: 0.01
+  _currentState: 
+  _previousState: 
 --- !u!1001 &3687644141431829031
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 [CreateAssetMenu(menuName = "AI/Enemy Config", fileName = "EnemyConfig")]
@@ -18,7 +17,7 @@ public class EnemyConfig : ScriptableObject
     [Header("Perception")]
     public float ViewDistance = 20f;
     [Range(0f, 180f)] public float ViewAngle = 90f;
-    public LayerMask VisionObstacles = ~0;
+    public LayerMask VisionObstacles = 0;
     public float SuspicionGainPerSecond = 0.75f;
     public float SuspicionLossPerSecond = 0.5f;
     public float LostSightDelay = 1.25f;
@@ -30,15 +29,16 @@ public class EnemyConfig : ScriptableObject
     public float IdleMinTime = 2f;
     public float IdleMaxTime = 4f;
     public float SearchDuration = 6f;
-    [Range(20f, 50f)]
-    public float SearchRadius = 20f;
-    public float PreferredAttackRange = 2.0f; 
+    [Range(20f, 50f)] public float SearchRadius = 20f;
+    public float PreferredAttackRange = 2.0f;
 
     [Header("Combat Mode")]
     public EnemyAttackMode AttackMode = EnemyAttackMode.Melee;
 
-    public List<MeleeAttackDefinition> MeleeAttacks = new List<MeleeAttackDefinition>();
-    //public List<RangedAttackDefinition> RangedAttacks = new List<RangedAttackDefinition>();
+    public MeleeAttackDefinition MeleeAttack;
+    public RangedAttackDefinition RangeAttacks;
+    public ExplosionAttackDefinition ExplosionAttacks;
+    public LaserAttackDefinition LaserAttack;
 
     [Header("Flee")]
     public float FleeHealthThreshold = 0.2f;
@@ -51,14 +51,16 @@ public class EnemyConfig : ScriptableObject
 public enum EnemyAttackMode
 {
     Melee,
-    Ranged
+    Ranged,
+    Explosion,
+    Laser
 }
 
 [Serializable]
 public abstract class AttackDefinitionBase
 {
-    public string Id = "Attack";
-    public float Cooldown = 1.0f;
+    public string Id;
+    public float AttackCooldown = 1.0f;
     public float Windup = 0.2f;
     public float Damage = 10f;
 }
@@ -67,7 +69,7 @@ public abstract class AttackDefinitionBase
 public class MeleeAttackDefinition : AttackDefinitionBase
 {
     public float HitRadius = 1.0f;
-    public LayerMask HitMask = 0;
+    public LayerMask HitMask => LayerMask.GetMask("Player");
 }
 
 [Serializable]
@@ -75,5 +77,23 @@ public class RangedAttackDefinition : AttackDefinitionBase
 {
     public GameObject ProjectilePrefab;
     public float ProjectileSpeed = 20f;
-    public LayerMask HitMask = 0;
+    public LayerMask HitMask => LayerMask.GetMask("Player");
+}
+
+[Serializable]
+public class ExplosionAttackDefinition : AttackDefinitionBase
+{
+    public float ExplosionRadius = 5f;
+    public LayerMask HitMask => LayerMask.GetMask("Player");
+    [Header("VFX")]
+    public GameObject ExplosionVfxPrefab;
+    public float VfxLifetime = 3f;
+}
+
+[Serializable]
+public class LaserAttackDefinition : AttackDefinitionBase
+{
+    public GameObject LaserPrefab;
+    public float Duration = 2f;
+    public LayerMask HitMask => LayerMask.GetMask("Player");
 }

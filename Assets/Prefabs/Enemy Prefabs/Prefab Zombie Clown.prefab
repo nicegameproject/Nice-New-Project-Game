@@ -18,7 +18,7 @@ GameObject:
   - component: {fileID: 2393359574727270569}
   - component: {fileID: 5457969945446849102}
   - component: {fileID: 7449032450584690849}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Prefab Zombie Clown
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -77,7 +77,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Config: {fileID: 11400000, guid: 868d415d800f8454ebeff4171ce83687, type: 2}
   DebugStates: 1
-  Target: {fileID: 0}
 --- !u!114 &2583637014551356319
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -151,8 +150,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a62e883418c5c943899e1fb0880c4dc, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _maxHealth: 100
-  _current: 0
+  _healthTemplate: {fileID: 11400000, guid: c5f760a318eede04383e9f0f4166ee07, type: 2}
+  _logHealthChanges: 1
+  _currentHealthInspector: 0
+  _maxHealthInspector: 0
+  _healthPercentInspector: 0
 --- !u!114 &7449032450584690849
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -167,6 +169,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   CircleSegments: 48
   CircleYOffset: 0.01
+  _currentState: 
+  _previousState: 
 --- !u!1001 &5880044277362955059
 PrefabInstance:
   m_ObjectHideFlags: 0

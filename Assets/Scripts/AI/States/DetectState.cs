@@ -29,7 +29,7 @@ public sealed class DetectState : IAIState
 
     public void Update()
     {
-        if (_bb.IsDead)
+        if (_ai.Health.IsDead)
         {
             _ai.StateMachine.ChangeState(new DeathState(_ai, _bb));
             return;
@@ -38,6 +38,7 @@ public sealed class DetectState : IAIState
         Vector3 focus = _bb.HeardNoise
             ? _bb.HeardNoisePos
             : (_bb.Target != null ? _bb.Target.position : _ai.transform.position + _ai.transform.forward);
+        
         _ai.Locomotion.FaceTowards(focus);
 
         _timer += Time.deltaTime;
@@ -69,14 +70,11 @@ public sealed class DetectState : IAIState
         }
     }
 
-    public void Exit()
-    {
-        // Mo¿na ew. przywróciæ ruch tutaj
-    }
+    public void Exit() { }
 
     private bool ShouldFlee()
     {
-        float hpPct = Mathf.Approximately(_bb.MaxHealth, 0f) ? 0f : (_bb.CurrentHealth / _bb.MaxHealth);
-        return hpPct <= _ai.Config.FleeHealthThreshold && !_bb.IsDead;
+        float hpPct = Mathf.Approximately(_ai.Health.Max, 0f) ? 0f : (_ai.Health.Current / _ai.Health.Max);
+        return hpPct <= _ai.Config.FleeHealthThreshold && !_ai.Health.IsDead;
     }
 }

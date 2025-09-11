@@ -13,38 +13,56 @@ MonoBehaviour:
   m_Name: Mannequin_Config
   m_EditorClassIdentifier: 
   WalkSpeed: 1
-  RunSpeed: 7
-  FleeSpeed: 5
+  RunSpeed: 6
+  FleeSpeed: 3
   Acceleration: 10
-  AngularSpeed: 360
+  AngularSpeed: 200
   StoppingDistance: 0.5
   RepathIntervalPatrol: 3
   RepathIntervalChase: 0.25
-  ViewDistance: 7.73
-  ViewAngle: 60
+  ViewDistance: 11.48
+  ViewAngle: 75
   VisionObstacles:
     serializedVersion: 2
-    m_Bits: 4294967295
+    m_Bits: 128
   SuspicionGainPerSecond: 1
   SuspicionLossPerSecond: 0.5
   LostSightDelay: 1.25
-  HearingRadius: 12
+  HearingRadius: 15
   IdleMinTime: 4
   IdleMaxTime: 5
   SearchDuration: 8
   SearchRadius: 20
-  PreferredAttackRange: 2
-  AttackMode: 0
-  MeleeAttacks:
-  - Id: Melee
-    Cooldown: 2
+  PreferredAttackRange: 8
+  AttackMode: 1
+  MeleeAttack:
+    Id: Attack
+    AttackCooldown: 1
     Windup: 0.2
-    Damage: 3
+    Damage: 10
     HitRadius: 1
-    HitMask:
-      serializedVersion: 2
-      m_Bits: 0
-  RangedAttacks: []
+  RangeAttacks:
+    Id: Range
+    AttackCooldown: 1
+    Windup: 1.2
+    Damage: 10
+    ProjectilePrefab: {fileID: 1405263442411561244, guid: fda1f06f4db7ee1438f948c5afb35dcd, type: 3}
+    ProjectileSpeed: 15
+  ExplosionAttacks:
+    Id: Attack
+    AttackCooldown: 1
+    Windup: 0.2
+    Damage: 10
+    ExplosionRadius: 5
+    ExplosionVfxPrefab: {fileID: 0}
+    VfxLifetime: 3
+  LaserAttack:
+    Id: Attack
+    AttackCooldown: 1
+    Windup: 0.2
+    Damage: 10
+    LaserPrefab: {fileID: 0}
+    Duration: 2
   FleeHealthThreshold: 0.2
   FleeDistance: 12
   DrawGizmos: 1
