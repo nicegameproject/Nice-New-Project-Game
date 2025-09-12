@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -25,31 +26,41 @@ public sealed class FleeState : IAIState
 
         Vector3 fleePoint = ComputeFleePoint();
         _ai.Locomotion.SetDestination(fleePoint);
+
+        _ai.StartCoroutine(Run());
     }
 
-    public void Update()
-    {
-        _repathTimer += Time.deltaTime;
-
-        if (_repathTimer >= _ai.Config.RepathIntervalPatrol)
-        {
-            _repathTimer = 0f;
-            _ai.Locomotion.SetDestination(ComputeFleePoint());
-        }
-
-        if (Vector3.Distance(_ai.transform.position, _bb.LastKnownTargetPos) >= _ai.Config.FleeDistance)
-        {
-            _ai.StateMachine.ChangeState(new PatrolState(_ai, _bb));
-            return;
-        }
-
-        if (_ai.Health.IsDead)
-        {
-           _ai.StateMachine.ChangeState(new DeathState(_ai, _bb));
-        }
-    }
+    public void Update() { }
 
     public void Exit() { }
+
+    private IEnumerator Run()
+    {
+        while (IsCurrent())
+        {
+            _repathTimer += Time.deltaTime;
+
+            if (_repathTimer >= _ai.Config.RepathIntervalPatrol)
+            {
+                _repathTimer = 0f;
+                _ai.Locomotion.SetDestination(ComputeFleePoint());
+            }
+
+            if (Vector3.Distance(_ai.transform.position, _bb.LastKnownTargetPos) >= _ai.Config.FleeDistance)
+            {
+                _ai.StateMachine.ChangeState(new PatrolState(_ai, _bb));
+                yield break;
+            }
+
+            if (_ai.Health.IsDead)
+            {
+                _ai.StateMachine.ChangeState(new DeathState(_ai, _bb));
+                yield break;
+            }
+
+            yield return null;
+        }
+    }
 
     private Vector3 ComputeFleePoint()
     {
@@ -66,4 +77,6 @@ public sealed class FleeState : IAIState
             return hit.position;
         return _ai.transform.position + away * (_ai.Config.FleeDistance * 0.5f);
     }
+
+    private bool IsCurrent() => ReferenceEquals(_ai.StateMachine.Current, this);
 }

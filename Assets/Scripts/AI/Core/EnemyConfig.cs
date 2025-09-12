@@ -18,8 +18,6 @@ public class EnemyConfig : ScriptableObject
     public float ViewDistance = 20f;
     [Range(0f, 180f)] public float ViewAngle = 90f;
     public LayerMask VisionObstacles = 0;
-    public float SuspicionGainPerSecond = 0.75f;
-    public float SuspicionLossPerSecond = 0.5f;
     public float LostSightDelay = 1.25f;
 
     [Header("Hearing")]

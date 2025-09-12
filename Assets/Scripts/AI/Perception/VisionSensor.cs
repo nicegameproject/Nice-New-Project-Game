@@ -4,6 +4,7 @@ using UnityEngine;
 public class VisionSensor : MonoBehaviour
 {
     private EnemyConfig _config;
+    private bool _inTick; // guard reentrancy
 
     public void ApplyConfig(EnemyConfig config)
     {
@@ -13,65 +14,70 @@ public class VisionSensor : MonoBehaviour
     public void Tick(Blackboard bb)
     {
         if (_config == null) return;
-
-        var registry = PlayerRegistry.Instance;
-        var players = registry != null ? registry.Players : null;
-        if (players == null || players.Count == 0) { bb.ClearCurrent(); return; }
-
-        bb.SyncWithPlayers(players);
-
-        for (int i = 0; i < bb.TrackedCount; i++)
+        if (_inTick) return; // zabezpieczenie przed przypadkow¹ rekurencj¹
+        _inTick = true;
+        try
         {
-            var pc = players[i];
-            if (pc == null || pc.TransformRef == null) continue;
-
-            var entry = bb.GetOrEnsureEntry(i, pc);
-            if (entry == null) continue;
-
-            Vector3 toTarget = pc.TransformRef.position - transform.position;
-            float dist = toTarget.magnitude;
-            entry.Distance = dist;
-
-            bool withinDistance = dist <= _config.ViewDistance;
-            bool withinAngle = false;
-
-            if (withinDistance)
+            var registry = PlayerRegistry.Instance;
+            var players = registry != null ? registry.Players : null;
+            if (players == null || players.Count == 0)
             {
-                Vector3 forward = transform.forward;
-                Vector3 dir = toTarget.normalized;
-                float angle = Vector3.Angle(forward, dir);
-                withinAngle = angle <= _config.ViewAngle;
+                bb.ClearCurrent();
+                return;
             }
 
-            bool hasLOS = false;
-            if (withinDistance && withinAngle)
-            {
-                Vector3 origin = transform.position;
-                Vector3 target = pc.TransformRef.position;
-                Vector3 dir = (target - origin).normalized;
-                float distCheck = Vector3.Distance(origin, target);
+            bb.SyncWithPlayers(players);
 
-                if (!Physics.Raycast(origin, dir, distCheck, _config.VisionObstacles))
+            for (int i = 0; i < bb.TrackedCount && i < players.Count; i++)
+            {
+                var pc = players[i];
+                if (pc == null || pc.TransformRef == null) continue;
+
+                var entry = bb.GetOrEnsureEntry(i, pc);
+                if (entry == null) continue;
+
+                Vector3 origin = transform.position;
+                Vector3 targetPos = pc.TransformRef.position;
+                Vector3 toTarget = targetPos - origin;
+
+                float distSqr = toTarget.sqrMagnitude;
+                float viewDist = _config.ViewDistance;
+                float viewDistSqr = viewDist * viewDist;
+
+                if (distSqr > viewDistSqr)
                 {
-                    hasLOS = true;
+                    entry.HasLineOfSight = false;
+                    entry.Distance = Mathf.Sqrt(distSqr);
+                    continue;
+                }
+
+                float dist = Mathf.Sqrt(distSqr);
+                entry.Distance = dist;
+
+                Vector3 dirNorm = toTarget / dist;
+                float angle = Vector3.Angle(transform.forward, dirNorm);
+                if (angle > _config.ViewAngle)
+                {
+                    entry.HasLineOfSight = false;
+                    continue;
+                }
+
+                // Raycast przeszkód
+                bool blocked = Physics.Raycast(origin, dirNorm, dist, _config.VisionObstacles);
+                bool hasLOS = !blocked;
+                entry.HasLineOfSight = hasLOS;
+
+                if (hasLOS)
+                {
+                    entry.LastKnownPos = targetPos;
                 }
             }
 
-            entry.HasLineOfSight = hasLOS;
-
-            if (hasLOS)
-            {
-                entry.LastKnownPos = pc.TransformRef.position;
-                entry.TimeSinceSeen = 0f;
-                entry.Suspicion01 = Mathf.Clamp01(entry.Suspicion01 + _config.SuspicionGainPerSecond * Time.deltaTime);
-            }
-            else
-            {
-                entry.TimeSinceSeen += Time.deltaTime;
-                entry.Suspicion01 = Mathf.Clamp01(entry.Suspicion01 - _config.SuspicionLossPerSecond * Time.deltaTime);
-            }
+            bb.SelectBestTarget();
         }
-
-        bb.SelectBestTarget();
+        finally
+        {
+            _inTick = false;
+        }
     }
 }

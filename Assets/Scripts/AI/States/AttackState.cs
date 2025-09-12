@@ -18,7 +18,7 @@ public sealed class AttackState : IAIState
     }
 
     public void Enter()
-    {
+    {    
         _ai.Locomotion.SetStoppingDistance(_ai.Config.PreferredAttackRange + 0.05f);
         _ai.Locomotion.StopImmediate();
         _ai.Locomotion.SetSpeedToZero();
@@ -33,6 +33,8 @@ public sealed class AttackState : IAIState
 
     public void Exit()
     {
+        _ai.Animation.PlayWalk();
+
         if (_routine != null)
         {
             _ai.StopCoroutine(_routine);
