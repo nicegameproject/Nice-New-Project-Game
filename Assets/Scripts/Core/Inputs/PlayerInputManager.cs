@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 
+[DefaultExecutionOrder(-3)]
 public class PlayerInputManager : MonoBehaviour
 {
     public static PlayerInputManager Instance;

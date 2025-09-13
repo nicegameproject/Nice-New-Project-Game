@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+[DefaultExecutionOrder(-4)]
 public abstract class UpdatePublisherBase<TObserver> : MonoBehaviour 
 {
     protected static List<TObserver> _observers = new List<TObserver>();
