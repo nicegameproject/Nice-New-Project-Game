@@ -20,6 +20,10 @@ public sealed class SearchState : IAIState
 
     public void Enter()
     {
+        _bb.Target = null;
+        _bb.HasLineOfSight = false;
+        _bb.DistanceToTarget = 0f;
+
         _ai.Animation.PlayWalk();
         _ai.Locomotion.SetSpeedWalk();
         _ai.Locomotion.Resume();
@@ -52,24 +56,11 @@ public sealed class SearchState : IAIState
                 yield break;
             }
 
-            if (_bb.HeardNoise)
-            {
-                if (_bb.Target != null)
-                    _ai.Locomotion.FaceTowards(_bb.Target.position);
-
-                yield return new WaitForSeconds(0.2f);
-
-                _ai.StateMachine.ChangeState(new ChaseState(_ai, _bb));
-                yield break;
-            }
-
             if (ShouldFlee())
             {
                 _ai.StateMachine.ChangeState(new FleeState(_ai, _bb));
                 yield break;
             }
-
-          
 
             if (_ai.Locomotion.HasReachedDestination())
             {

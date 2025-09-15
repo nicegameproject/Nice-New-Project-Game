@@ -18,14 +18,12 @@ public sealed class AttackState : IAIState
     }
 
     public void Enter()
-    {    
-        _ai.Locomotion.SetStoppingDistance(_ai.Config.PreferredAttackRange + 0.05f);
+    {
+        _ai.Locomotion.SetStoppingDistance(_ai.Config.PreferredAttackRange);
         _ai.Locomotion.StopImmediate();
         _ai.Locomotion.SetSpeedToZero();
-        _ai.Locomotion.Agent.updateRotation = false;
 
         _ai.Combat.TrySelectAttack(_bb.DistanceToTarget, out _currentAttack);
-
         _routine = _ai.StartCoroutine(AttackRoutine());
     }
 
@@ -47,127 +45,62 @@ public sealed class AttackState : IAIState
 
     private IEnumerator AttackRoutine()
     {
-        while (true)
+        while (IsThisStateCurrent())
         {
-            FaceTargetFast();
-
-            IAIState pendingTransition;
-            if (CheckTransitions(out pendingTransition, effectiveRangeOverride: GetEffectiveRange(), onlyWhenNotAttacking: true))
+            if (_ai.Health.IsDead)
             {
-                DoTransition(pendingTransition);
+                DoTransition(new DeathState(_ai, _bb));
                 yield break;
             }
 
-            if (_currentAttack == null)
+            if (_bb.DistanceToTarget > _ai.Config.PreferredAttackRange)
             {
-                _ai.Combat.TrySelectAttack(_bb.DistanceToTarget, out _currentAttack);
-
-                if (_currentAttack == null)
+                if (!_ai.Animation.IsAttackPlaying())
                 {
-                    yield return WaitWithChecks(0.1f);
-                    if (!IsThisStateCurrent()) yield break;
-                    continue;
+                    DoTransition(new ChaseState(_ai, _bb));
+                    yield break;
                 }
+                _ai.Locomotion.StopImmediate();
             }
 
-            _ai.Animation.PlayAttack();
+            FaceTarget();
 
-            float windup = Mathf.Max(0f, _currentAttack.Windup);
-            if (windup > 0f)
-                yield return WaitWithChecks(windup);
-
-            if (!IsThisStateCurrent()) yield break;
-
-            if (_bb.Target != null)
-                _ai.Combat.ExecuteAttack(_currentAttack, _bb.Target);
-
-            while (_ai.Animation.IsAttackPlaying())
+            if (!_ai.Animation.IsAttackPlaying())
             {
-                FaceTargetFast();
-
-                if (CheckTransitions(out pendingTransition, effectiveRangeOverride: GetEffectiveRange(), onlyWhenNotAttacking: false))
+                if (_bb.DistanceToTarget > _ai.Config.PreferredAttackRange)
                 {
-                    DoTransition(pendingTransition);
+                    DoTransition(new ChaseState(_ai, _bb));
                     yield break;
                 }
 
-                yield return null;
-                if (!IsThisStateCurrent()) yield break;
+                if (_currentAttack == null)
+                {
+                    _ai.Combat.TrySelectAttack(_bb.DistanceToTarget, out _currentAttack);
+                }
+
+                if (_currentAttack != null)
+                {
+                    _ai.Animation.PlayAttack();
+
+                    if (_bb.Target != null)
+                        _ai.Combat.ExecuteAttack(_currentAttack, _bb.Target);
+
+                    _currentAttack = null;
+                }
             }
-
-            yield return WaitWithChecks(0.05f);
-            if (!IsThisStateCurrent()) yield break;
-
-            _currentAttack = null;
-        }
-    }
-
-    private IEnumerator WaitWithChecks(float duration)
-    {
-        float t = 0f;
-        while (t < duration)
-        {
-            IAIState next;
-            if (CheckTransitions(out next, effectiveRangeOverride: GetEffectiveRange(), onlyWhenNotAttacking: !_ai.Animation.IsAttackPlaying()))
+            else
             {
-                DoTransition(next);
-                yield break;
+                _ai.Locomotion.StopImmediate();
             }
 
-            t += Time.deltaTime;
             yield return null;
-
-            if (!IsThisStateCurrent())
-                yield break;
         }
     }
 
-    private float GetEffectiveRange()
+    private void FaceTarget()
     {
-        return _ai.Config.PreferredAttackRange;
-    }
-
-    private void FaceTargetFast()
-    {
-        if (_currentAttack != null && _currentAttack.Id == "Laser Attack")
-        {
-            if (_bb.Target != null)
-                _ai.Locomotion.FaceTowards(_bb.Target.position, 10f);
-        }
-        else
-        {
-            if (_bb.Target != null)
-                _ai.Locomotion.FaceTowards(_bb.Target.position, 200f);
-        }
-
-    }
-
-    private bool CheckTransitions(out IAIState next, float effectiveRangeOverride, bool onlyWhenNotAttacking)
-    {
-        next = null;
-
-        if (_ai.Health.IsDead)
-        {
-            next = new DeathState(_ai, _bb);
-            return true;
-        }
-
-        if (ShouldFlee())
-        {
-            next = new FleeState(_ai, _bb);
-            return true;
-        }
-
-        if (onlyWhenNotAttacking && !_ai.Animation.IsAttackPlaying())
-        {
-            if (!_bb.HasLineOfSight || _bb.DistanceToTarget > effectiveRangeOverride)
-            {
-                next = new ChaseState(_ai, _bb);
-                return true;
-            }
-        }
-
-        return false;
+        if (_bb.Target != null)
+            _ai.Locomotion.FaceTowards(_bb.Target.position, 300f);
     }
 
     private void DoTransition(IAIState next)
@@ -179,11 +112,5 @@ public sealed class AttackState : IAIState
     private bool IsThisStateCurrent()
     {
         return ReferenceEquals(_ai.StateMachine.Current, this);
-    }
-
-    private bool ShouldFlee()
-    {
-        float hpPct = Mathf.Approximately(_ai.Health.Max, 0f) ? 0f : (_ai.Health.Current / _ai.Health.Max);
-        return hpPct <= _ai.Config.FleeHealthThreshold && !_ai.Health.IsDead;
     }
 }

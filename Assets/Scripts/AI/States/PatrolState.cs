@@ -49,6 +49,20 @@ public sealed class PatrolState : IAIState
 
             if (_bb.HeardNoise)
             {
+                if (_bb.Target == null)
+                {
+                    for (int i = 0; i < _bb.TrackedCount; i++)
+                    {
+                        var t = _bb.TrackedTargets[i];
+                        if (t.Transform != null && t.HeardNoise)
+                        {
+                            _bb.SetCurrentFromEntry(t);
+                            _bb.HasLineOfSight = false; 
+                            break;
+                        }
+                    }
+                }
+
                 _ai.StateMachine.ChangeState(new DetectState(_ai, _bb));
                 yield break;
             }

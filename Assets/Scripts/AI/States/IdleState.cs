@@ -38,14 +38,6 @@ public sealed class IdleState : IAIState
         {
             _idleTimer += Time.deltaTime;
 
-            _ai.Hearing.PullHeardInfo(_bb);
-
-            if (_bb.HeardNoise)
-            {
-                _ai.StateMachine.ChangeState(new DetectState(_ai, _bb));
-                yield break;
-            }
-
             if (_idleTimer >= _targetIdleTime)
             {
                 _ai.StateMachine.ChangeState(new PatrolState(_ai, _bb));

@@ -25,8 +25,6 @@ MonoBehaviour:
   VisionObstacles:
     serializedVersion: 2
     m_Bits: 128
-  SuspicionGainPerSecond: 1
-  SuspicionLossPerSecond: 0.5
   LostSightDelay: 1.25
   HearingRadius: 16.5
   IdleMinTime: 2
@@ -38,20 +36,18 @@ MonoBehaviour:
   MeleeAttack:
     Id: Attack
     AttackCooldown: 1
-    Windup: 0.2
     Damage: 10
     HitRadius: 1
   RangeAttacks:
     Id: Range
     AttackCooldown: 1
-    Windup: 1.2
     Damage: 10
     ProjectilePrefab: {fileID: 1405263442411561244, guid: fda1f06f4db7ee1438f948c5afb35dcd, type: 3}
+    FireDelay: 1.5
     ProjectileSpeed: 15
   ExplosionAttacks:
     Id: Attack
     AttackCooldown: 1
-    Windup: 0.2
     Damage: 10
     ExplosionRadius: 5
     ExplosionVfxPrefab: {fileID: 0}
@@ -59,10 +55,18 @@ MonoBehaviour:
   LaserAttack:
     Id: Laser Attack
     AttackCooldown: 5
-    Windup: 1.1
     Damage: 1
     LaserPrefab: {fileID: 5213638095349176657, guid: 32c218bffb5d82e42863e4ab86c24b97, type: 3}
     Duration: 2.5
+    FireDelay: 1.1
+    BeamSpeed: 60
+    MaxBeamDistance: 500
+    HitMask:
+      serializedVersion: 2
+      m_Bits: 0
+    ImpactVfxPrefab: {fileID: 1544155806044888537, guid: ea35a28631aa6f8498a5f948e0a9a64b, type: 3}
+    ImpactVfxLifetime: 2
+    ParentImpactToHit: 0
   FleeHealthThreshold: 0.2
   FleeDistance: 12
   DrawGizmos: 1

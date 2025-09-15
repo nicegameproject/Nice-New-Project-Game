@@ -155,7 +155,6 @@ public sealed class Blackboard
     public void ClearCurrent()
     {
         Target = null;
-        LastKnownTargetPos = Vector3.zero;
         HasLineOfSight = false;
         DistanceToTarget = Mathf.Infinity;
     }

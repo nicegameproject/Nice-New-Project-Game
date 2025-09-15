@@ -47,9 +47,22 @@ public sealed class DetectState : IAIState
                 yield break;
 
             }
-
-            if (_bb.HeardNoise)
+             if (_bb.HeardNoise)
             {
+                if (_bb.Target == null)
+                {
+                    for (int i = 0; i < _bb.TrackedCount; i++)
+                    {
+                        var t = _bb.TrackedTargets[i];
+                        if (t.Transform != null && t.HeardNoise)
+                        {
+                            _bb.SetCurrentFromEntry(t);
+                            _bb.HasLineOfSight = false;
+                            break;
+                        }
+                    }
+                }
+
                 if (_bb.Target != null)
                     _ai.Locomotion.FaceTowards(_bb.Target.position);
 
