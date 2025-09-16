@@ -1,8 +1,11 @@
 using System;
 using System.Numerics;
 using Core;
+using Unity.VisualScripting;
 using UnityEngine;
+using IState = Core.IState;
 using Quaternion = UnityEngine.Quaternion;
+using StateMachine = Core.StateMachine;
 using Vector2 = UnityEngine.Vector2;
 using Vector3 = UnityEngine.Vector3;
 
@@ -22,6 +25,14 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
     [SerializeField] private float jumpSpeed = 0.8f;
     [SerializeField] public float movingThreshold = 0.01f;
     
+    [Header("Crouch")]
+    [SerializeField] private float crouchHeight = 1.35f;
+
+    [SerializeField] private LayerMask ceilingLayer;
+
+    [SerializeField] private float cameraCrouchOffsetY = 0.175f;
+    [SerializeField] private float crouchTransitionSpeed = 10f;
+    
     [Header("Animation")]
     [SerializeField] private float playerModelRotationSpeed = 10f;
     [SerializeField] private float rotateToTargetTime = 0.25f;
@@ -34,10 +45,17 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
     [Header("Environment Details")] 
     [SerializeField] private LayerMask groundLayers;
 
-    [Header("State Machine")]
-    [SerializeField] private string currentState;
     [field: SerializeField] public bool InGroundedState { get; private set; }
     
+    public float PlayerHeight
+    {
+        get => characterController.height;
+        private set => characterController.height = value;
+    }
+    
+    public bool IsTryingToCrouch { get; set; }
+    public bool IsCrouching => _standingHeight - _currentHeight > .1f;
+
     public float AntiBump { get; private set; }
     
     private PlayerLocomotionInput _playerLocomotionInput;
@@ -50,13 +68,27 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
     private bool _jumpedLastFrame = false;
     private float _verticalVelocity = 0f;
 
+    private float _currentHeight;
+    private float _standingHeight;
+    private Vector3 initialCameraPosition;
+    private Vector3 initialCenter;
+    private float _crouchBlend;
+
     private void Awake()
     {
         _playerLocomotionInput = GetComponent<PlayerLocomotionInput>();
 
         AntiBump = sprintSpeed;
+        IsTryingToCrouch = false;
         
         SetupStateMachine();
+    }
+
+    private void Start()
+    {
+        initialCameraPosition  = playerCamera.transform.localPosition;
+        initialCenter = characterController.center;
+        _standingHeight = _currentHeight = PlayerHeight;
     }
 
     private void SetupStateMachine()
@@ -69,16 +101,30 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
         var fallingState = new Core.FallingState(this, playerAnimation);
         var crouchState = new Core.CrouchState(this, playerAnimation);
             
-        AddTransition(idleState, walkingState, new FuncPredicate(() => IsMovementInput));
+        AddTransition(walkingState, idleState, new FuncPredicate(() => !IsMovementInput || !IsMovingLaterally()));
+        AddTransition(crouchState, idleState, new FuncPredicate(CanStandFromCrouch));
+        AddTransition(fallingState, idleState, new FuncPredicate(IsGrounded));
         
-        AnyTransition(jumpState, new FuncPredicate(() => (!IsGrounded() || _jumpedLastFrame) && characterController.velocity.y > 0f));
-        AnyTransition(fallingState,new FuncPredicate(() => (!IsGrounded() || _jumpedLastFrame) && characterController.velocity.y <= 0f) );
-        AnyTransition(idleState, new FuncPredicate(() => !IsMovementInput || IsMovingLaterally()));
+        AddTransition(idleState, walkingState, new FuncPredicate(() => IsMovementInput));
+        AddTransition(idleState, jumpState, new FuncPredicate(() => (!IsGrounded() || _jumpedLastFrame) && characterController.velocity.y > 0f));
+        
+        // AddTransition(walkingState, jumpState, new FuncPredicate(() => (!IsGrounded() || _jumpedLastFrame) && characterController.velocity.y > 0f));
+        // AddTransition(jumpState, crouchState, new FuncPredicate(() => _jumpedLastFrame && characterController.velocity.y > 0f && CanJumpFromCrouching()));
+        
+        
+        AnyTransition(fallingState,new FuncPredicate(() => (!IsGrounded() || _jumpedLastFrame) && characterController.velocity.y <= 0f && !CheckIfCeilingIsAbove()));
+        //AnyTransition(jumpState, new FuncPredicate(() => (!IsGrounded() || _jumpedLastFrame) && characterController.velocity.y > 0f));
+        AnyTransition(crouchState, new FuncPredicate(() => IsGrounded() && IsCrouchingInput));
+        //AnyTransition(idleState, new FuncPredicate(() => (!IsMovementInput || !IsMovingLaterally()) && CanStandFromCrouch()));
         
         _stateMachine.SetState(idleState);
     }
 
     private bool IsMovementInput => _playerLocomotionInput.MovementInput != Vector2.zero;
+    private bool IsCrouchingInput => _playerLocomotionInput.CrouchToggledOn;
+    private bool CanStandFromCrouch() => !IsCrouchingInput && !CheckIfCeilingIsAbove();
+    private bool CanJumpFromCrouching() => IsCrouching && !CheckIfCeilingIsAbove();
+
     
     private void AddTransition(IState from, IState to, IPredicate condition) =>
         _stateMachine.AddTransition(from, to, condition);
@@ -100,12 +146,46 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
     public void ObservedUpdate()
     {
         _stateMachine.Update();
-        currentState = _stateMachine.CurrentState.GetType().ToString();
+
+        CheckIfCeilingIsAbove();
         
+        HandleCrouching(IsTryingToCrouch);
         HandleVerticalMovement();
         HandleLateralMovement();
     }
-    
+
+    public void HandleCrouching(bool shouldCrouch)
+    {
+        var targetBlend = shouldCrouch ? 1f : 0f;
+        
+        var step = Time.deltaTime * crouchTransitionSpeed;
+        _crouchBlend = Mathf.MoveTowards(_crouchBlend, targetBlend, step);
+
+        var heightDelta = _standingHeight - crouchHeight;
+        var halfHeightDelta = heightDelta * 0.5f;
+
+        var newHeight = _standingHeight - _crouchBlend * heightDelta;
+
+        var centerOffset = Vector3.up * ( _crouchBlend * halfHeightDelta );
+        var newCenter = initialCenter - centerOffset;
+
+        var totalCameraDown = halfHeightDelta + cameraCrouchOffsetY;
+        var cameraOffset = Vector3.up * (_crouchBlend * totalCameraDown);
+        var newCameraPos = initialCameraPosition - cameraOffset;
+
+        PlayerHeight = newHeight;
+        characterController.center = newCenter;
+        playerCamera.transform.localPosition = newCameraPos;
+    }
+
+
+    private bool CheckIfCeilingIsAbove()
+    {
+        var heightDifference = _standingHeight - PlayerHeight;
+        var castOrigin = transform.position + new Vector3(0, PlayerHeight, 0);
+        return Physics.Raycast(castOrigin, Vector3.up, heightDifference, ceilingLayer, QueryTriggerInteraction.Ignore);
+    }
+
     private void HandleLateralMovement()
     {
         var cameraForwardXZ = new Vector3(playerCamera.transform.forward.x, 0, playerCamera.transform.forward.z)
@@ -222,7 +302,5 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
         var validAngle = angle <= characterController.slopeLimit;
 
         return characterController.isGrounded && validAngle;
-
     }
-    
 }

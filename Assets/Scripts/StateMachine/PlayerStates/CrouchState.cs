@@ -10,6 +10,14 @@ namespace Core
         public override void OnEnter()
         {
             Player.SetGroundedState(true);
+            Player.IsTryingToCrouch = true;
+            PlayerAnimation.IsCrouching = true;
+        }
+
+        public override void OnExit()
+        {
+            Player.IsTryingToCrouch = false;
+            PlayerAnimation.IsCrouching = false;
         }
     }
 }

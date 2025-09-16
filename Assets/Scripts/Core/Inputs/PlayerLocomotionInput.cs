@@ -11,7 +11,8 @@ public class PlayerLocomotionInput : MonoBehaviour, PlayerControls.IPlayerLocomo
     public Vector2 LookInput { get; private set; }
     public bool JumpPressed { get; private set; }
     public bool SprintToggledOn { get; private set; }
-    
+    public bool CrouchToggledOn { get; private set; }
+
     private PlayerControls _playerControls;
     
     private void OnEnable()
@@ -48,6 +49,7 @@ public class PlayerLocomotionInput : MonoBehaviour, PlayerControls.IPlayerLocomo
   
     public void ObservedLateUpdate()
     {
+        if (JumpPressed) CrouchToggledOn = false;
         JumpPressed = false;
     }
     
@@ -80,5 +82,12 @@ public class PlayerLocomotionInput : MonoBehaviour, PlayerControls.IPlayerLocomo
         }
     }
 
+    public void OnToggleCrouch(InputAction.CallbackContext context)
+    {
+        if (!context.performed)
+            return;
+
+        CrouchToggledOn = !CrouchToggledOn;
+    }
     
 }

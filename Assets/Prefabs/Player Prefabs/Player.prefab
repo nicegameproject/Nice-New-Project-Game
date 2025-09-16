@@ -58,8 +58,8 @@ CharacterController:
   m_Height: 1.8
   m_Radius: 0.3
   m_SlopeLimit: 45
-  m_StepOffset: 0.3
-  m_SkinWidth: 0.01
+  m_StepOffset: 0.1
+  m_SkinWidth: 0.05
   m_MinMoveDistance: 0.00001
   m_Center: {x: 0, y: 0.9, z: 0}
 --- !u!114 &5308266258092250316
@@ -76,14 +76,20 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   characterController: {fileID: 4323826687791794693}
   playerCamera: {fileID: 5232565277435970049}
-  playerAnimation: {fileID: 0}
+  playerAnimation: {fileID: 1985461526518825140}
   sprintAcceleration: 50
-  sprintSpeed: 8
+  sprintSpeed: 7
   drag: 20
   gravity: 25
   terminalVelocity: 50
   jumpSpeed: 1
   movingThreshold: 0.01
+  crouchHeight: 1.25
+  ceilingLayer:
+    serializedVersion: 2
+    m_Bits: 1
+  cameraCrouchOffsetY: 0.175
+  crouchTransitionSpeed: 10
   playerModelRotationSpeed: 10
   rotateToTargetTime: 0.25
   lookSenseH: 0.1
@@ -92,7 +98,6 @@ MonoBehaviour:
   groundLayers:
     serializedVersion: 2
     m_Bits: 1
-  currentState: 
   <InGroundedState>k__BackingField: 0
 --- !u!114 &4070038566002549931
 MonoBehaviour:
@@ -146,7 +151,7 @@ Transform:
   m_GameObject: {fileID: 5173125013125948805}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -1, z: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -181,7 +186,7 @@ Transform:
   m_GameObject: {fileID: 5635899699281564731}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.017, y: 1.768, z: 0.045}
+  m_LocalPosition: {x: 0, y: 1.65, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

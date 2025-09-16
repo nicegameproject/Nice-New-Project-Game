@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Unity.VisualScripting.Antlr3.Runtime;
+using UnityEngine;
 
 namespace Core
 {
@@ -30,13 +31,16 @@ namespace Core
         public void SetState(IState state)
         {
             current = nodes[state.GetType()];
+            Debug.Log($"Current State: {state.GetType()}");
             current.State?.OnEnter();
         }
 
         private void ChangeState(IState state)
         {
             if (state == current.State) return;
+            Debug.Log($"Current State: {state.GetType()}");
 
+            
             var previousState = current.State;
             var nextState = nodes[state.GetType()].State;
 
