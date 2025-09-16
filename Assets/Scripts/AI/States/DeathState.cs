@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public sealed class DeathState : IAIState
@@ -20,16 +21,27 @@ public sealed class DeathState : IAIState
         _ai.Animation.PlayDeath();
         _ai.Locomotion.StopImmediate();
         if (_ai.Locomotion.Agent != null) _ai.Locomotion.Agent.enabled = false;
+
+        _ai.StartCoroutine(Run());
     }
 
-    public void Update()
+    public void Update() { }
+
+    public void Exit() { }
+
+    private IEnumerator Run()
     {
-        _despawnTimer -= Time.deltaTime;
-        if (_despawnTimer <= 0f)
+        while (IsCurrent())
         {
-            GameObject.Destroy(_ai.gameObject);
+            _despawnTimer -= Time.deltaTime;
+            if (_despawnTimer <= 0f)
+            {
+                GameObject.Destroy(_ai.gameObject);
+                yield break;
+            }
+            yield return null;
         }
     }
 
-    public void Exit() { }
+    private bool IsCurrent() => ReferenceEquals(_ai.StateMachine.Current, this);
 }

@@ -16,7 +16,6 @@ public class AIAnimationController : MonoBehaviour
     private static readonly int HashWalk = Animator.StringToHash("Walk");
     private static readonly int HashRun = Animator.StringToHash("Run");
     private static readonly int HashIdle = Animator.StringToHash("Idle");
-    private static readonly int HashTaunt = Animator.StringToHash("Taunt");
     private static readonly int HashTakeHit = Animator.StringToHash("TakeHit");
     private static readonly int HashHitVariant = Animator.StringToHash("HitVariant");
 
@@ -34,12 +33,6 @@ public class AIAnimationController : MonoBehaviour
     {
         if (_isDead) return;
         SetTrigger(HashAttack);
-    }
-
-    public void PlayTaunt()
-    {
-        if (_isDead) return;
-        SetTrigger(HashTaunt);
     }
 
     public void PlayDeath()
@@ -68,15 +61,6 @@ public class AIAnimationController : MonoBehaviour
         if (_animator == null) return false;
         var info = _animator.GetCurrentAnimatorStateInfo(0);
         if ((info.shortNameHash == HashAttack || info.IsName("Attack")) && info.normalizedTime < 0.8f)
-            return true;
-        return false;
-    }
-
-    public bool IsTauntPlaying()
-    {
-        if (_animator == null) return false;
-        var info = _animator.GetCurrentAnimatorStateInfo(0);
-        if ((info.shortNameHash == HashTaunt || info.IsName("Taunt")) && info.normalizedTime < 0.8f)
             return true;
         return false;
     }

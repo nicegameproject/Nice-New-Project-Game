@@ -10,10 +10,8 @@ public sealed class Blackboard
         public PlayerCharacter Player;
         public Transform Transform;
         public Vector3 LastKnownPos;
-        public float TimeSinceSeen;
         public bool HasLineOfSight;
         public float Distance;
-        public float Suspicion01;
         public bool HeardNoise;
         public Vector3 HeardNoisePos;
 
@@ -22,10 +20,8 @@ public sealed class Blackboard
             Player = null;
             Transform = null;
             LastKnownPos = Vector3.zero;
-            TimeSinceSeen = 0f;
             HasLineOfSight = false;
             Distance = Mathf.Infinity;
-            Suspicion01 = 0f;
             HeardNoise = false;
             HeardNoisePos = Vector3.zero;
         }
@@ -33,11 +29,8 @@ public sealed class Blackboard
 
     public Transform Target;
     public Vector3 LastKnownTargetPos;
-    public float TimeSinceSeen;
     public bool HasLineOfSight;
     public float DistanceToTarget;
-
-    public float Suspicion01;
 
     public bool HeardNoise;
     public Vector3 HeardNoisePos;
@@ -60,10 +53,8 @@ public sealed class Blackboard
     {
         Target = null;
         LastKnownTargetPos = Vector3.zero;
-        TimeSinceSeen = 0f;
         HasLineOfSight = false;
         DistanceToTarget = Mathf.Infinity;
-        Suspicion01 = 0f;
         HeardNoise = false;
         HeardNoisePos = Vector3.zero;
         CurrentDestination = Vector3.zero;
@@ -144,12 +135,6 @@ public sealed class Blackboard
                 bestLOSDist = t.Distance;
                 bestLOS = t;
             }
-
-            if (t.Suspicion01 > bestSuspVal)
-            {
-                bestSuspVal = t.Suspicion01;
-                bestSusp = t;
-            }
         }
 
         var chosen = bestLOS != null ? bestLOS : (bestSuspVal > 0.01f ? bestSusp : null);
@@ -163,19 +148,14 @@ public sealed class Blackboard
     {
         Target = t.Transform;
         LastKnownTargetPos = t.LastKnownPos;
-        TimeSinceSeen = t.TimeSinceSeen;
         HasLineOfSight = t.HasLineOfSight;
         DistanceToTarget = t.Distance;
-        Suspicion01 = t.Suspicion01;
     }
 
     public void ClearCurrent()
     {
         Target = null;
-        LastKnownTargetPos = Vector3.zero;
-        TimeSinceSeen = 0f;
         HasLineOfSight = false;
         DistanceToTarget = Mathf.Infinity;
-        Suspicion01 = 0f;
     }
 }

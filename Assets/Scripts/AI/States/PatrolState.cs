@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.AI;
 
@@ -5,13 +6,6 @@ public sealed class PatrolState : IAIState
 {
     private readonly AIController _ai;
     private readonly Blackboard _bb;
-
-    private float _repathTimer;
-
-    private Vector3 _wanderCenter;
-    private float _wanderRadius;
-    private const int MaxRandomPointTries = 8;
-
     public string Name => "Patrol";
 
     public PatrolState(AIController ai, Blackboard bb)
@@ -25,52 +19,67 @@ public sealed class PatrolState : IAIState
         _ai.Animation.PlayWalk();
         _ai.Locomotion.SetSpeedWalk();
         _ai.Locomotion.Resume();
-       
-
-        _repathTimer = 0f;
-
-        _wanderCenter = _ai.transform.position;
-        _wanderRadius = _ai.Config != null ? _ai.Config.SearchRadius : 6f;
 
         SetNextRandomDestination();
+
+        _ai.StartCoroutine(Run());
     }
 
-    public void Update()
-    {
-        _repathTimer += Time.deltaTime;
-
-        _ai.Hearing.PullHeardInfo(_bb);
-
-        if (_bb.Suspicion01 > 0.25f || _bb.HeardNoise)
-        {
-            _ai.StateMachine.ChangeState(new DetectState(_ai, _bb));
-            return;
-        }
-
-        if (_ai.Locomotion.HasReachedDestination())
-        {
-            _ai.StateMachine.ChangeState(new IdleState(_ai, _bb));
-            return;
-        }
-
-        if (_repathTimer >= (_ai.Config != null ? _ai.Config.RepathIntervalPatrol : 1f))
-        {
-            _repathTimer = 0f;
-            if (!_ai.Locomotion.Agent.hasPath || _ai.Locomotion.Agent.pathStatus != NavMeshPathStatus.PathComplete)
-            {
-                SetNextRandomDestination();
-            }
-        }
-    }
+    public void Update() { }
 
     public void Exit()
     {
         _ai.Animation.ResetWalkAnimation();
     }
 
+    private IEnumerator Run()
+    {
+        while (IsCurrent())
+        {
+            if (_ai.Vision != null)
+                _ai.Vision.Tick(_bb);
+
+            _ai.Hearing.PullHeardInfo(_bb);
+
+            if (_bb.HasLineOfSight)
+            {
+                _ai.StateMachine.ChangeState(new DetectState(_ai, _bb));
+                yield break;
+            }
+
+            if (_bb.HeardNoise)
+            {
+                if (_bb.Target == null)
+                {
+                    for (int i = 0; i < _bb.TrackedCount; i++)
+                    {
+                        var t = _bb.TrackedTargets[i];
+                        if (t.Transform != null && t.HeardNoise)
+                        {
+                            _bb.SetCurrentFromEntry(t);
+                            _bb.HasLineOfSight = false; 
+                            break;
+                        }
+                    }
+                }
+
+                _ai.StateMachine.ChangeState(new DetectState(_ai, _bb));
+                yield break;
+            }
+
+            if (_ai.Locomotion.HasReachedDestination())
+            {
+                _ai.StateMachine.ChangeState(new IdleState(_ai, _bb));
+                yield break;
+            }
+
+            yield return null;
+        }
+    }
+
     private void SetNextRandomDestination()
     {
-        if (TryGetRandomPoint(_wanderCenter, _wanderRadius, out Vector3 point))
+        if (TryGetRandomPoint(_ai.transform.position, _ai.Config.SearchRadius, out Vector3 point))
         {
             _ai.Locomotion.SetDestination(point);
             _bb.CurrentDestination = point;
@@ -84,7 +93,7 @@ public sealed class PatrolState : IAIState
 
     private bool TryGetRandomPoint(Vector3 center, float radius, out Vector3 result)
     {
-        for (int i = 0; i < MaxRandomPointTries; i++)
+        for (int i = 0; i < 10; i++)
         {
             Vector2 circle = Random.insideUnitCircle * radius;
             Vector3 candidate = center + new Vector3(circle.x, 0f, circle.y);
@@ -102,4 +111,6 @@ public sealed class PatrolState : IAIState
         result = Vector3.zero;
         return false;
     }
+
+    private bool IsCurrent() => ReferenceEquals(_ai.StateMachine.Current, this);
 }

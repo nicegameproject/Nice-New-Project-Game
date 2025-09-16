@@ -42,7 +42,6 @@ public class HearingSensor : MonoBehaviour
             var entry = bb.GetOrEnsureEntry(bestIdx, pc);
             entry.HeardNoise = true;
             entry.HeardNoisePos = bb.HeardNoisePos;
-            entry.Suspicion01 = Mathf.Clamp01(entry.Suspicion01 + 0.25f * Time.deltaTime);
             entry.LastKnownPos = bb.HeardNoisePos;
         }
 

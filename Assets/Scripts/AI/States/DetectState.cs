@@ -1,11 +1,10 @@
+using System.Collections;
 using UnityEngine;
 
 public sealed class DetectState : IAIState
 {
     private readonly AIController _ai;
     private readonly Blackboard _bb;
-    private float _timer;
-    private bool _tauntStarted;
 
     public string Name => "Detect";
 
@@ -17,64 +16,77 @@ public sealed class DetectState : IAIState
 
     public void Enter()
     {
-        _timer = 0f;
-        _tauntStarted = false;
-
-        _ai.Animation.PlayTaunt();
-        _tauntStarted = true;
-
         _ai.Locomotion.StopImmediate();
         _ai.Locomotion.SetSpeedToZero();
+
+        _ai.StartCoroutine(Run());
     }
 
-    public void Update()
-    {
-        if (_ai.Health.IsDead)
-        {
-            _ai.StateMachine.ChangeState(new DeathState(_ai, _bb));
-            return;
-        }
-
-        Vector3 focus = _bb.HeardNoise
-            ? _bb.HeardNoisePos
-            : (_bb.Target != null ? _bb.Target.position : _ai.transform.position + _ai.transform.forward);
-        
-        _ai.Locomotion.FaceTowards(focus);
-
-        _timer += Time.deltaTime;
-
-        if (_bb.LastKnownTargetPos != Vector3.zero && _timer > 0.2f)
-        {
-            _ai.Locomotion.SetDestination(_bb.LastKnownTargetPos);
-        }
-
-        if (_bb.HasLineOfSight && _bb.Suspicion01 >= 0.9f)
-        {
-            if (!_ai.Animation.IsTauntPlaying())
-            {
-                _ai.StateMachine.ChangeState(new ChaseState(_ai, _bb));
-                return;
-            }
-        }
-
-        if (_bb.Suspicion01 <= 0.01f && !_bb.HeardNoise)
-        {
-            _ai.StateMachine.ChangeState(new PatrolState(_ai, _bb));
-            return;
-        }
-
-        if (ShouldFlee())
-        {
-            _ai.StateMachine.ChangeState(new FleeState(_ai, _bb));
-            return;
-        }
-    }
+    public void Update() { }
 
     public void Exit() { }
+
+    private IEnumerator Run()
+    {
+        while (IsCurrent())
+        {
+            if (_ai.Health.IsDead)
+            {
+                _ai.StateMachine.ChangeState(new DeathState(_ai, _bb));
+                yield break;
+            }
+
+            if (_bb.HasLineOfSight)
+            {
+                if (_bb.Target != null)
+                    _ai.Locomotion.FaceTowards(_bb.Target.position);
+
+                yield return new WaitForSeconds(0.25f);
+
+                _ai.StateMachine.ChangeState(new ChaseState(_ai, _bb));
+                yield break;
+
+            }
+             if (_bb.HeardNoise)
+            {
+                if (_bb.Target == null)
+                {
+                    for (int i = 0; i < _bb.TrackedCount; i++)
+                    {
+                        var t = _bb.TrackedTargets[i];
+                        if (t.Transform != null && t.HeardNoise)
+                        {
+                            _bb.SetCurrentFromEntry(t);
+                            _bb.HasLineOfSight = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (_bb.Target != null)
+                    _ai.Locomotion.FaceTowards(_bb.Target.position);
+
+                yield return new WaitForSeconds(0.25f);
+
+                _ai.StateMachine.ChangeState(new ChaseState(_ai, _bb));
+                yield break;
+            }
+
+            if (ShouldFlee())
+            {
+                _ai.StateMachine.ChangeState(new FleeState(_ai, _bb));
+                yield break;
+            }
+
+            yield return null;
+        }
+    }
 
     private bool ShouldFlee()
     {
         float hpPct = Mathf.Approximately(_ai.Health.Max, 0f) ? 0f : (_ai.Health.Current / _ai.Health.Max);
         return hpPct <= _ai.Config.FleeHealthThreshold && !_ai.Health.IsDead;
     }
+
+    private bool IsCurrent() => ReferenceEquals(_ai.StateMachine.Current, this);
 }

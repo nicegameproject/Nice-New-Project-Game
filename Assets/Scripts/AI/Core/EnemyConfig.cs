@@ -16,10 +16,8 @@ public class EnemyConfig : ScriptableObject
 
     [Header("Perception")]
     public float ViewDistance = 20f;
-    [Range(0f, 180f)] public float ViewAngle = 90f;
+    [Range(0f, 360f)] public float ViewAngle = 120f;
     public LayerMask VisionObstacles = 0;
-    public float SuspicionGainPerSecond = 0.75f;
-    public float SuspicionLossPerSecond = 0.5f;
     public float LostSightDelay = 1.25f;
 
     [Header("Hearing")]
@@ -46,6 +44,8 @@ public class EnemyConfig : ScriptableObject
 
     [Header("Debug")]
     public bool DrawGizmos = true;
+
+    public float HalfViewAngleRad => 0.5f * ViewAngle * Mathf.Deg2Rad;
 }
 
 public enum EnemyAttackMode
@@ -61,7 +61,6 @@ public abstract class AttackDefinitionBase
 {
     public string Id;
     public float AttackCooldown = 1.0f;
-    public float Windup = 0.2f;
     public float Damage = 10f;
 }
 
@@ -76,6 +75,7 @@ public class MeleeAttackDefinition : AttackDefinitionBase
 public class RangedAttackDefinition : AttackDefinitionBase
 {
     public GameObject ProjectilePrefab;
+    public float FireDelay = 0.5f;
     public float ProjectileSpeed = 20f;
     public LayerMask HitMask => LayerMask.GetMask("Player");
 }
@@ -91,9 +91,15 @@ public class ExplosionAttackDefinition : AttackDefinitionBase
 }
 
 [Serializable]
-public class LaserAttackDefinition : AttackDefinitionBase
-{
+public class LaserAttackDefinition : AttackDefinitionBase { 
     public GameObject LaserPrefab;
     public float Duration = 2f;
-    public LayerMask HitMask => LayerMask.GetMask("Player");
+    public float FireDelay = 0.5f;
+    public float BeamSpeed = 60f;
+    public float MaxBeamDistance = 500f;
+    public LayerMask HitMask;
+
+    [Header("Impact VFX")]
+    public GameObject ImpactVfxPrefab;
+    public bool ParentImpactToHit = false; 
 }

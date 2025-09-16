@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 public sealed class IdleState : IAIState
@@ -23,43 +24,47 @@ public sealed class IdleState : IAIState
 
         _targetIdleTime = Random.Range(_ai.Config.IdleMinTime, _ai.Config.IdleMaxTime);
         _idleTimer = 0f;
+
+        _ai.StartCoroutine(Run());
     }
 
-    public void Update()
-    {
-        _idleTimer += Time.deltaTime;
-
-        _ai.Hearing.PullHeardInfo(_bb);
-
-        if (_bb.Suspicion01 > 0.01f || _bb.HeardNoise)
-        {
-            _ai.StateMachine.ChangeState(new DetectState(_ai, _bb));
-            return;
-        }
-
-        if (_idleTimer >= _targetIdleTime)
-        {
-            _ai.StateMachine.ChangeState(new PatrolState(_ai, _bb));
-            return;
-        }
-
-        if (ShouldFlee())
-        {
-            _ai.StateMachine.ChangeState(new FleeState(_ai, _bb));
-            return;
-        }
-
-        if (_ai.Health.IsDead)
-        {
-            _ai.StateMachine.ChangeState(new DeathState(_ai, _bb));
-        }
-    }
+    public void Update() { }
 
     public void Exit() { }
+
+    private IEnumerator Run()
+    {
+        while (IsCurrent())
+        {
+            _idleTimer += Time.deltaTime;
+
+            if (_idleTimer >= _targetIdleTime)
+            {
+                _ai.StateMachine.ChangeState(new PatrolState(_ai, _bb));
+                yield break;
+            }
+
+            if (ShouldFlee())
+            {
+                _ai.StateMachine.ChangeState(new FleeState(_ai, _bb));
+                yield break;
+            }
+
+            if (_ai.Health.IsDead)
+            {
+                _ai.StateMachine.ChangeState(new DeathState(_ai, _bb));
+                yield break;
+            }
+
+            yield return null;
+        }
+    }
 
     private bool ShouldFlee()
     {
         float hpPct = Mathf.Approximately(_ai.Health.Max, 0f) ? 0f : (_ai.Health.Current / _ai.Health.Max);
         return hpPct <= _ai.Config.FleeHealthThreshold && !_ai.Health.IsDead;
     }
+
+    private bool IsCurrent() => ReferenceEquals(_ai.StateMachine.Current, this);
 }

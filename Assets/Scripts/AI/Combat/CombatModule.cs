@@ -39,8 +39,6 @@ public class CombatModule : MonoBehaviour
         }
     }
 
-
-
     private void RegisterAttack(AttackDefinitionBase def)
     {
         if (def == null || string.IsNullOrEmpty(def.Id)) return;
@@ -114,8 +112,6 @@ public class CombatModule : MonoBehaviour
         return false;
     }
 
-
-
     public void ExecuteAttack(AttackDefinitionBase attack, Transform target)
     {
         if (attack == null) return;
@@ -128,7 +124,7 @@ public class CombatModule : MonoBehaviour
         else if (attack is RangedAttackDefinition ranged)
         {
             if (target == null) return;
-            ExecuteRanged(ranged, target);
+            StartCoroutine(ExecuteRangedDelayed(ranged, target, ranged.FireDelay));
         }
         else if (attack is ExplosionAttackDefinition explosion)
         {
@@ -136,7 +132,7 @@ public class CombatModule : MonoBehaviour
         }
         else if (attack is LaserAttackDefinition laser)
         {
-            ExecuteLaser(laser);
+            StartCoroutine(ExecuteLaserDelayed(laser, laser.FireDelay));
         }
         else
         {
@@ -144,6 +140,18 @@ public class CombatModule : MonoBehaviour
         }
 
         SetCooldown(attack.Id, attack.AttackCooldown);
+    }
+
+    private IEnumerator ExecuteRangedDelayed(RangedAttackDefinition ranged, Transform target, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        ExecuteRanged(ranged, target);
+    }
+
+    private IEnumerator ExecuteLaserDelayed(LaserAttackDefinition laser, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+        ExecuteLaser(laser);
     }
 
     private void ExecuteMelee(MeleeAttackDefinition melee, Transform target)
@@ -251,9 +259,6 @@ public class CombatModule : MonoBehaviour
 
     private IEnumerator LaserRoutine(LaserAttackDefinition laser)
     {
-        const float maxDistance = 500f;
-        const float beamSpeed = 60f;
-
         GameObject laserObj;
         if (laser != null && laser.LaserPrefab != null)
         {
@@ -278,17 +283,17 @@ public class CombatModule : MonoBehaviour
 
         while (elapsed < laser.Duration)
         {
-            Vector3 origin = shootPoint != null ? shootPoint.position : transform.position + Vector3.up * 1.0f;
+            Vector3 origin = shootPoint.position;
             Vector3 dir = transform.forward;
 
-            float targetDistance = maxDistance;
+            float targetDistance = laser.MaxBeamDistance;
             if (obstacleMask != 0 &&
-                Physics.Raycast(origin, dir, out var hit, maxDistance, obstacleMask, QueryTriggerInteraction.Ignore))
+                Physics.Raycast(origin, dir, out var hit, laser.MaxBeamDistance, obstacleMask, QueryTriggerInteraction.Ignore))
             {
                 targetDistance = hit.distance;
             }
 
-            currentLength = Mathf.Min(targetDistance, currentLength + beamSpeed * Time.deltaTime);
+            currentLength = Mathf.Min(targetDistance, currentLength + laser.BeamSpeed * Time.deltaTime);
 
             lr.SetPosition(0, origin);
             lr.SetPosition(1, origin + dir * currentLength);

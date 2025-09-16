@@ -25,9 +25,7 @@ MonoBehaviour:
   VisionObstacles:
     serializedVersion: 2
     m_Bits: 128
-  SuspicionGainPerSecond: 1
-  SuspicionLossPerSecond: 0.5
-  LostSightDelay: 1.25
+  LostSightDelay: 2
   HearingRadius: 12
   IdleMinTime: 3
   IdleMaxTime: 5
