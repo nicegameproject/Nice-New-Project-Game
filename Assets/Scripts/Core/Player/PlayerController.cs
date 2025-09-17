@@ -24,6 +24,7 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
     [SerializeField] private float terminalVelocity = 50f;
     [SerializeField] private float jumpSpeed = 0.8f;
     [SerializeField] public float movingThreshold = 0.01f;
+    [SerializeField] private bool holdToSprint = true;
     
     [Header("Crouch")]
     [SerializeField] private float crouchHeight = 1.35f;
@@ -54,7 +55,6 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
     }
     
     public bool IsTryingToCrouch { get; set; }
-    public bool IsCrouching => _standingHeight - _currentHeight > .1f;
 
     public float AntiBump { get; private set; }
     
@@ -67,12 +67,25 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
 
     private bool _jumpedLastFrame = false;
     private float _verticalVelocity = 0f;
-
+    
     private float _currentHeight;
     private float _standingHeight;
     private Vector3 initialCameraPosition;
     private Vector3 initialCenter;
     private float _crouchBlend;
+    
+    private Vector2 _movementInput;
+    private Vector2 _lookInput;
+    private bool _jumpInput;
+    private bool _crouchInput;
+    
+    private void HandleMoveInput(Vector2 input) => _movementInput = input;
+    private void HandleLookInput(Vector2 input) => _lookInput = input;
+    private void HandleJumpStarted() => _jumpInput = true;
+    private void HandleJumpCanceled() => _jumpInput = false;
+    private void HandleCrouchStarted() => _crouchInput = !_crouchInput;
+    
+    private bool CanStandFromCrouch() => !_crouchInput && !CheckIfCeilingIsAbove();
 
     private void Awake()
     {
@@ -91,6 +104,30 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
         _standingHeight = _currentHeight = PlayerHeight;
     }
 
+    private void OnEnable()
+    {
+        PlayerLocomotionInput.OnMovementInput += HandleMoveInput;
+        PlayerLocomotionInput.OnLookInput += HandleLookInput;
+        PlayerLocomotionInput.OnJumpStarted += HandleJumpStarted;
+        PlayerLocomotionInput.OnJumpCanceled += HandleJumpCanceled;
+        PlayerLocomotionInput.OnCrouchStarted += HandleCrouchStarted;
+        
+        UpdatePublisher.RegisterObserver(this);
+        LateUpdatePublisher.RegisterObserver(this);
+    }
+
+    private void OnDisable()
+    {
+        PlayerLocomotionInput.OnMovementInput -= HandleMoveInput;
+        PlayerLocomotionInput.OnLookInput -= HandleLookInput;
+        PlayerLocomotionInput.OnJumpStarted += HandleJumpStarted;
+        PlayerLocomotionInput.OnJumpCanceled += HandleJumpCanceled;
+        PlayerLocomotionInput.OnCrouchStarted -= HandleCrouchStarted;
+        
+        UpdatePublisher.UnregisterObserver(this);
+        LateUpdatePublisher.UnregisterObserver(this);
+    }
+    
     private void SetupStateMachine()
     {
         _stateMachine = new StateMachine();
@@ -101,29 +138,25 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
         var fallingState = new Core.FallingState(this, playerAnimation);
         var crouchState = new Core.CrouchState(this, playerAnimation);
             
-        AddTransition(walkingState, idleState, new FuncPredicate(() => !IsMovementInput || !IsMovingLaterally()));
+        AddTransition(walkingState, idleState, new FuncPredicate(() => !(_movementInput != Vector2.zero) || !IsMovingLaterally()));
         AddTransition(crouchState, idleState, new FuncPredicate(CanStandFromCrouch));
         AddTransition(fallingState, idleState, new FuncPredicate(IsGrounded));
         
-        AddTransition(idleState, walkingState, new FuncPredicate(() => IsMovementInput));
+        AddTransition(idleState, walkingState, new FuncPredicate(() => (_movementInput != Vector2.zero)));
         AddTransition(idleState, jumpState, new FuncPredicate(() => (!IsGrounded() || _jumpedLastFrame) && characterController.velocity.y > 0f));
+        AddTransition(walkingState, jumpState, new FuncPredicate(() => (!IsGrounded() || _jumpedLastFrame) && characterController.velocity.y > 0f));
         
         // AddTransition(walkingState, jumpState, new FuncPredicate(() => (!IsGrounded() || _jumpedLastFrame) && characterController.velocity.y > 0f));
         // AddTransition(jumpState, crouchState, new FuncPredicate(() => _jumpedLastFrame && characterController.velocity.y > 0f && CanJumpFromCrouching()));
         
-        
         AnyTransition(fallingState,new FuncPredicate(() => (!IsGrounded() || _jumpedLastFrame) && characterController.velocity.y <= 0f && !CheckIfCeilingIsAbove()));
         //AnyTransition(jumpState, new FuncPredicate(() => (!IsGrounded() || _jumpedLastFrame) && characterController.velocity.y > 0f));
-        AnyTransition(crouchState, new FuncPredicate(() => IsGrounded() && IsCrouchingInput));
+        AnyTransition(crouchState, new FuncPredicate(() => IsGrounded() && _crouchInput));
         //AnyTransition(idleState, new FuncPredicate(() => (!IsMovementInput || !IsMovingLaterally()) && CanStandFromCrouch()));
         
         _stateMachine.SetState(idleState);
     }
-
-    private bool IsMovementInput => _playerLocomotionInput.MovementInput != Vector2.zero;
-    private bool IsCrouchingInput => _playerLocomotionInput.CrouchToggledOn;
-    private bool CanStandFromCrouch() => !IsCrouchingInput && !CheckIfCeilingIsAbove();
-    private bool CanJumpFromCrouching() => IsCrouching && !CheckIfCeilingIsAbove();
+   
 
     
     private void AddTransition(IState from, IState to, IPredicate condition) =>
@@ -131,17 +164,7 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
 
     private void AnyTransition(IState to, IPredicate condition) => _stateMachine.AddAnyTransition(to, condition);
     
-    private void OnEnable()
-    {
-        UpdatePublisher.RegisterObserver(this);
-        LateUpdatePublisher.RegisterObserver(this);
-    }
-
-    private void OnDisable()
-    {
-        UpdatePublisher.UnregisterObserver(this);
-        LateUpdatePublisher.UnregisterObserver(this);
-    }
+    
 
     public void ObservedUpdate()
     {
@@ -153,6 +176,7 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
         HandleVerticalMovement();
         HandleLateralMovement();
     }
+    
 
     public void HandleCrouching(bool shouldCrouch)
     {
@@ -193,8 +217,8 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
 
         var cameraRightXZ = new Vector3(playerCamera.transform.right.x, 0, playerCamera.transform.right.z).normalized;
 
-        var movementDirection = cameraRightXZ * _playerLocomotionInput.MovementInput.x + 
-                                cameraForwardXZ * _playerLocomotionInput.MovementInput.y;
+        var movementDirection = cameraRightXZ * _movementInput.x + 
+                                cameraForwardXZ * _movementInput.y;
 
         var movementDelta = movementDirection * sprintAcceleration * Time.deltaTime;
         var newVelocity = characterController.velocity + movementDelta;
@@ -216,12 +240,15 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
 
         if (IsGrounded() && _verticalVelocity < 0)
             _verticalVelocity = -AntiBump;
+        
 
-        if (_playerLocomotionInput.JumpPressed && InGroundedState)
+        if (_jumpInput && InGroundedState)
         {
-            _verticalVelocity += Mathf.Sqrt(jumpSpeed * 3 * gravity);
+            if (!CheckIfCeilingIsAbove())
+                _verticalVelocity += Mathf.Sqrt(jumpSpeed * 3 * gravity);
             _jumpedLastFrame = true;
         }
+        
 
         if (Mathf.Abs(_verticalVelocity) > Mathf.Abs(terminalVelocity))
         {
@@ -243,6 +270,9 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
     
     public void ObservedLateUpdate()
     {
+        if (_jumpInput) _crouchInput = false;
+        _jumpInput = false;
+        
         UpdateCameraRotation();
     }
 
@@ -253,13 +283,13 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
 
     private void UpdateCameraRotation()
     {
-        _cameraRotation.x += lookSenseH * _playerLocomotionInput.LookInput.x;
-        _cameraRotation.y = Mathf.Clamp(_cameraRotation.y - lookSenseV * _playerLocomotionInput.LookInput.y,
+        _cameraRotation.x += lookSenseH * _lookInput.x;
+        _cameraRotation.y = Mathf.Clamp(_cameraRotation.y - lookSenseV * _lookInput.y,
             -lookLimitV, lookLimitV);
 
         RotatePlayerToTarget();
         
-        _playerTargetRotation.x += transform.eulerAngles.x + lookSenseH * _playerLocomotionInput.LookInput.x;
+        _playerTargetRotation.x += transform.eulerAngles.x + lookSenseH * _lookInput.x;
 
         playerCamera.transform.rotation = Quaternion.Euler(_cameraRotation.y, _cameraRotation.x, 0f);
 

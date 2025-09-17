@@ -27,9 +27,12 @@ public class PlayerAnimation : MonoBehaviour, IUpdateObserver
     
     private Vector3 _currentBlendInput = Vector3.zero;
     
+    
     private const float _sprintMaxBlendValue = 1.5f;
     private const float _runMaxBlendValue = 1.0f;
     private const float _walkMaxBlendValue = 0.5f;
+    
+    private Vector3 _movementInput;
     
     private void Awake()
     {
@@ -39,11 +42,13 @@ public class PlayerAnimation : MonoBehaviour, IUpdateObserver
 
     private void OnEnable()
     {
+        PlayerLocomotionInput.OnMovementInput += OnMovementInputChange;
         UpdatePublisher.RegisterObserver(this);
     }
 
     private void OnDisable()
     {
+        PlayerLocomotionInput.OnMovementInput -= OnMovementInputChange;
         UpdatePublisher.UnregisterObserver(this);
     }
 
@@ -51,10 +56,12 @@ public class PlayerAnimation : MonoBehaviour, IUpdateObserver
     {
         UpdateAnimationState();
     }
+
+    private void OnMovementInputChange(Vector2 input) => _movementInput = input;
     
     private void UpdateAnimationState()
     {
-        var inputTarget = _playerLocomotionInput.MovementInput * _runMaxBlendValue;
+        var inputTarget = _movementInput * _runMaxBlendValue;
 
         _currentBlendInput = Vector3.Lerp(_currentBlendInput, inputTarget, locomotionBlendSpeed * Time.deltaTime);
         
