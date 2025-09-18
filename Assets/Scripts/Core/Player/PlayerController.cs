@@ -175,14 +175,14 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
         AddTransition(sprintState, idleState, new FuncPredicate(() => !CanMove() || !IsMovingLaterally()));
         AddTransition(sprintState, runningState, new FuncPredicate(() => IsMovingLaterally() && !_sprintInput));
         AddTransition(crouchState, idleState, new FuncPredicate(() => !_crouchInput && !CheckIfCeilingIsAbove()));
-        AddTransition(fallingState, idleState, new FuncPredicate(IsGrounded));
+        AddTransition(fallingState, idleState, new FuncPredicate(() => IsGrounded()));
         
         AddTransition(idleState, runningState, new FuncPredicate(() => CanMove()));
         AddTransition(idleState, sprintState, new FuncPredicate(() => IsMovingLaterally() && _sprintInput));
         AddTransition(runningState, sprintState, new FuncPredicate(() => IsMovingLaterally() && _sprintInput));
         
         AnyTransition(jumpState, new FuncPredicate(() => (!IsGrounded() || _jumpedLastFrame) && characterController.velocity.y > 0f));
-        AnyTransition(fallingState,new FuncPredicate(() => (!IsGrounded() || _jumpedLastFrame) && characterController.velocity.y <= 0f));
+        AnyTransition(fallingState,new FuncPredicate(() => (!IsGrounded()) && characterController.velocity.y <= 0f));
         AnyTransition(crouchState, new FuncPredicate(() => IsGrounded() && _crouchInput));
         
         _stateMachine.SetState(idleState);
@@ -205,12 +205,11 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
         HandleVerticalMovement();
         HandleLateralMovement();
     }
-    
 
     private void HandleCrouching()
     {
         var targetBlend = IsCrouching ? 1f : 0f;
-        
+
         var step = Time.deltaTime * crouchTransitionSpeed;
         _crouchBlend = Mathf.MoveTowards(_crouchBlend, targetBlend, step);
 
@@ -230,7 +229,6 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
         characterController.center = newCenter;
         playerCamera.transform.localPosition = newCameraPos;
     }
-
 
     private bool CheckIfCeilingIsAbove()
     {
@@ -265,12 +263,10 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
 
     private void HandleVerticalMovement()
     {
-      
         _verticalVelocity -= gravity * Time.deltaTime;
 
         if (IsGrounded() && _verticalVelocity < 0)
             _verticalVelocity = -AntiBump;
-        
 
         if (_jumpInput && InGroundedState && !CheckIfCeilingIsAbove())
         {
@@ -286,7 +282,6 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
         _verticalVelocity += _extraVelocity.y;
     }
 
-
     public void ObservedLateUpdate()
     {
         _jumpInput = false;
@@ -294,7 +289,7 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
     }
 
     public void AddVelocity(Vector3 vector) => _extraVelocity += vector;
-    public void SetJumpedLastFrame(bool jumpedLastFrame) => jumpedLastFrame = jumpedLastFrame;
+    public void SetJumpedLastFrame(bool jumpedLastFrame) => _jumpedLastFrame = jumpedLastFrame;
     public void SetSpeed(float newSpeed) => _currentSpeed = newSpeed;
     public void SetAcceleration(float newAcceleration) => _currentAcceleration = newAcceleration;
 
@@ -327,8 +322,7 @@ public class PlayerController : MonoBehaviour, IUpdateObserver, ILateUpdateObser
     
     private bool IsGrounded()
     {
-        var grounded = InGroundedState ? IsGroundedWhileGrounded() : IsGroundedWhileAirborne();
-        return grounded;
+        return InGroundedState ? IsGroundedWhileGrounded() : IsGroundedWhileAirborne();
     }
 
     private bool IsGroundedWhileGrounded()

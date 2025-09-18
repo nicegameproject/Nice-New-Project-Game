@@ -93,7 +93,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   cameraCrouchOffsetY: 0.175
-  crouchTransitionSpeed: 10
+  crouchTransitionSpeed: 5
   playerModelRotationSpeed: 10
   <SprintMaxBlendValue>k__BackingField: 1.5
   <RunMaxBlendValue>k__BackingField: 1
