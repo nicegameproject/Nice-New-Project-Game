@@ -7,8 +7,6 @@ namespace Core
 {
     public class StateMachine
     {
-        public IState CurrentState => current.State;
-
         private StateNode current;
         private Dictionary<Type, StateNode> nodes = new();
         private HashSet<ITransition> anyTransitions = new();
@@ -20,7 +18,6 @@ namespace Core
                 ChangeState(transition.To);
             
             current.State?.Update();
-            
         }
 
         public void FixedUpdate()

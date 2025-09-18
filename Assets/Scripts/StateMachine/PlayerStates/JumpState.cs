@@ -16,9 +16,12 @@ namespace Core
                 Player.AddVelocity(new Vector3(0, Player.AntiBump, 0));
             }
 
-            PlayerAnimation.IsJumping = true;
-            Player.SetGroundedState(false);
+            Player.InGroundedState = false;
             Player.SetJumpedLastFrame(false);
+
+            PlayerAnimation.SetMoveBlendValue(Player.RunMaxBlendValue);
+            PlayerAnimation.IsGrounded = false;
+            PlayerAnimation.IsJumping = true;
         }
 
         public override void OnExit()

@@ -9,14 +9,23 @@ namespace Core
 
         public override void OnEnter()
         {
-            Player.SetGroundedState(true);
-            Player.IsTryingToCrouch = true;
+            Player.InGroundedState = true;
+            Player.IsCrouching = true;
+            Player.SetSpeed(Player.WalkSpeed);
+            Player.SetAcceleration(Player.WalkAcceleration);
+            
+            PlayerAnimation.SetMoveBlendValue(Player.WalkMaxBlendValue);
+            PlayerAnimation.IsGrounded = true;
             PlayerAnimation.IsCrouching = true;
         }
 
         public override void OnExit()
         {
-            Player.IsTryingToCrouch = false;
+            Player.IsCrouching = false;
+            Player.SetSpeed(Player.RunSpeed);
+            Player.SetAcceleration(Player.RunAcceleration);
+            
+            PlayerAnimation.IsGrounded = Player.InGroundedState;
             PlayerAnimation.IsCrouching = false;
         }
     }

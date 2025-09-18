@@ -13,6 +13,7 @@ public class PlayerLocomotionInput : MonoBehaviour, PlayerControls.IPlayerLocomo
     public static event Action OnSprintStarted;
     public static event Action OnSprintCanceled;
     public static event Action OnCrouchStarted;
+    public static event Action OnCrouchCanceled;
 
     private PlayerControls _playerControls;
     
@@ -69,5 +70,6 @@ public class PlayerLocomotionInput : MonoBehaviour, PlayerControls.IPlayerLocomo
     public void OnToggleCrouch(InputAction.CallbackContext context)
     {
         if(context.started) OnCrouchStarted?.Invoke();
+        if(context.canceled) OnCrouchCanceled?.Invoke();
     }
 }
