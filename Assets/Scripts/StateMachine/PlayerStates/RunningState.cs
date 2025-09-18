@@ -6,7 +6,9 @@ namespace Core
 
         public override void OnEnter()
         {
-            Player.SetGroundedState(true);
+            Player.InGroundedState = true;
+
+            PlayerAnimation.IsGrounded = true;
         }
 
     }
