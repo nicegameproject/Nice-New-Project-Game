@@ -6,7 +6,10 @@ public class HearingSensor : MonoBehaviour
 {
     private EnemyConfig _config;
 
-    public static event Action<Vector3, float> OnNoise; 
+    public static event Action<Vector3, float> OnNoise;
+
+    private Vector3 _heardPos;
+    private float _heardTimer;
 
     public void ApplyConfig(EnemyConfig config)
     {
@@ -43,6 +46,7 @@ public class HearingSensor : MonoBehaviour
             entry.HeardNoise = true;
             entry.HeardNoisePos = bb.HeardNoisePos;
             entry.LastKnownPos = bb.HeardNoisePos;
+            entry.LastHeardTime = Time.time;
         }
 
         bb.SelectBestTarget();
@@ -61,17 +65,31 @@ public class HearingSensor : MonoBehaviour
     private void HandleNoise(Vector3 pos, float radius)
     {
         if (_config == null) return;
-        float effective = Mathf.Max(radius, _config.HearingRadius);
-        float dist = Vector3.Distance(transform.position, pos);
-        if (dist <= effective)
-        {
-            _heardPos = pos;
-            _heardTimer = 1.5f;
-        }
-    }
 
-    private Vector3 _heardPos;
-    private float _heardTimer;
+        float effective = Mathf.Max(radius, _config.HearingRadius);
+
+        Vector3 earPos = transform.position;
+        float dist = Vector3.Distance(earPos, pos);
+        if (dist > effective) return;
+
+        int mask = _config.VisionObstacles;
+        Vector3 dirXZ = new Vector3(pos.x - earPos.x, 0f, pos.z - earPos.z);
+        float planarDist = dirXZ.magnitude;
+
+        if (planarDist > 0.001f)
+        {
+            dirXZ /= planarDist;
+            Vector3 origin = new Vector3(earPos.x, earPos.y, earPos.z);
+
+            if (Physics.Raycast(origin, dirXZ, out RaycastHit hit, planarDist, mask))
+            {
+                return;
+            }
+        }
+
+        _heardPos = pos;
+        _heardTimer = _config.HearingMemoryDuration;
+    }
 
     void Update()
     {

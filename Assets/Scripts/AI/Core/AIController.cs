@@ -22,6 +22,7 @@ public class AIController : MonoBehaviour
     public AIStateMachine StateMachine { get; private set; }
 
     private bool _deathHandled;
+    private PerceptionMode _perceptionMode = PerceptionMode.VisionAndHearing;
 
     void Awake()
     {
@@ -52,15 +53,22 @@ public class AIController : MonoBehaviour
     {
         if (Config != null)
         {
-            Vision.ApplyConfig(Config);
-            Hearing.ApplyConfig(Config);
+            _perceptionMode = Config.Perception;
+            if (_perceptionMode != PerceptionMode.HearingOnly && Vision != null)
+                Vision.ApplyConfig(Config);
+            if (_perceptionMode != PerceptionMode.VisionOnly && Hearing != null)
+                Hearing.ApplyConfig(Config);
             Locomotion.ApplyConfig(Config);
             Combat.ApplyConfig(Config);
             Health.ApplyConfig(Config);
         }
 
-        Blackboard.Reset();
+        if (_perceptionMode == PerceptionMode.HearingOnly && Vision != null)
+            Vision.enabled = false;
+        if (_perceptionMode == PerceptionMode.VisionOnly && Hearing != null)
+            Hearing.enabled = false;
 
+        Blackboard.Reset();
         StateMachine.ChangeState(new SpawnState(this, Blackboard));
     }
 
@@ -68,10 +76,40 @@ public class AIController : MonoBehaviour
     {
         if (Health != null && Health.IsDead) return;
 
-        Hearing.PullHeardInfo(Blackboard);
+        if (_perceptionMode != PerceptionMode.VisionOnly && Hearing != null && Hearing.enabled)
+        {
+            Hearing.PullHeardInfo(Blackboard);
+        }
 
-        Vision.Tick(Blackboard);
-        Hearing.Tick(Blackboard);
+        if (_perceptionMode != PerceptionMode.HearingOnly && Vision != null && Vision.enabled)
+        {
+            Vision.Tick(Blackboard);
+        }
+
+        if (_perceptionMode != PerceptionMode.VisionOnly && Hearing != null && Hearing.enabled)
+        {
+            Hearing.Tick(Blackboard);
+        }
+
+        if (Blackboard.Target != null)
+        {
+            Vector3 targetPos = Blackboard.Target.position;
+            float dist = Vector3.Distance(transform.position, targetPos);
+
+            Blackboard.DistanceToTarget = dist;
+            Blackboard.LastKnownTargetPos = targetPos;
+
+            for (int i = 0; i < Blackboard.TrackedCount; i++)
+            {
+                var t = Blackboard.TrackedTargets[i];
+                if (t.Transform == Blackboard.Target)
+                {
+                    t.Distance = dist;
+                    t.LastKnownPos = targetPos;
+                    break;
+                }
+            }
+        }
 
         StateMachine.Update();
     }

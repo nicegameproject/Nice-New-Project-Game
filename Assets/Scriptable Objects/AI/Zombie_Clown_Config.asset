@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a70200c41cb891349ba73ea56f547c64, type: 3}
   m_Name: Zombie_Clown_Config
   m_EditorClassIdentifier: 
+  Perception: 2
   WalkSpeed: 0.5
   RunSpeed: 5
   FleeSpeed: 5
@@ -36,20 +37,18 @@ MonoBehaviour:
   MeleeAttack:
     Id: Attack
     AttackCooldown: 1
-    Windup: 0.2
     Damage: 10
     HitRadius: 1
   RangeAttacks:
     Id: Attack
     AttackCooldown: 1
-    Windup: 0.2
     Damage: 10
     ProjectilePrefab: {fileID: 0}
+    FireDelay: 0.5
     ProjectileSpeed: 20
   ExplosionAttacks:
     Id: Attack
     AttackCooldown: 1
-    Windup: 0.2
     Damage: 10
     ExplosionRadius: 5
     ExplosionVfxPrefab: {fileID: 0}
@@ -57,10 +56,13 @@ MonoBehaviour:
   LaserAttack:
     Id: Attack
     AttackCooldown: 1
-    Windup: 0.2
     Damage: 10
     LaserPrefab: {fileID: 0}
     Duration: 2
+    FireDelay: 0.5
+    BeamSpeed: 60
+    MaxBeamDistance: 500
+    ImpactVfxPrefab: {fileID: 0}
   FleeHealthThreshold: 0.2
   FleeDistance: 12
   DrawGizmos: 1

@@ -4,6 +4,9 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "AI/Enemy Config", fileName = "EnemyConfig")]
 public class EnemyConfig : ScriptableObject
 {
+    [Header("Perception Mode")]
+    public PerceptionMode Perception = PerceptionMode.VisionAndHearing;
+
     [Header("Movement")]
     public float WalkSpeed = 2.0f;
     public float RunSpeed = 4.0f;
@@ -22,6 +25,7 @@ public class EnemyConfig : ScriptableObject
 
     [Header("Hearing")]
     public float HearingRadius = 12f;
+    public float HearingMemoryDuration = 10f;
 
     [Header("Behavior")]
     public float IdleMinTime = 2f;
@@ -45,7 +49,13 @@ public class EnemyConfig : ScriptableObject
     [Header("Debug")]
     public bool DrawGizmos = true;
 
-    public float HalfViewAngleRad => 0.5f * ViewAngle * Mathf.Deg2Rad;
+}
+
+public enum PerceptionMode
+{
+    VisionOnly,
+    HearingOnly,
+    VisionAndHearing
 }
 
 public enum EnemyAttackMode
@@ -91,15 +101,15 @@ public class ExplosionAttackDefinition : AttackDefinitionBase
 }
 
 [Serializable]
-public class LaserAttackDefinition : AttackDefinitionBase { 
+public class LaserAttackDefinition : AttackDefinitionBase
+{
     public GameObject LaserPrefab;
     public float Duration = 2f;
     public float FireDelay = 0.5f;
     public float BeamSpeed = 60f;
     public float MaxBeamDistance = 500f;
-    public LayerMask HitMask;
+    public LayerMask HitMask => LayerMask.GetMask("Player");
 
     [Header("Impact VFX")]
     public GameObject ImpactVfxPrefab;
-    public bool ParentImpactToHit = false; 
 }

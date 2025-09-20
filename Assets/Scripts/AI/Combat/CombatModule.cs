@@ -257,6 +257,8 @@ public class CombatModule : MonoBehaviour
         }
     }
 
+    private static readonly RaycastHit[] _laserHitBuffer = new RaycastHit[8];
+
     private IEnumerator LaserRoutine(LaserAttackDefinition laser)
     {
         GameObject laserObj;
@@ -280,27 +282,97 @@ public class CombatModule : MonoBehaviour
 
         float elapsed = 0f;
         float currentLength = 0f;
+        GameObject impactVfxInstance = null;
+        const float impactActivationEpsilon = 0.05f;
+
+        float dps = laser.Damage;
 
         while (elapsed < laser.Duration)
         {
             Vector3 origin = shootPoint.position;
             Vector3 dir = transform.forward;
 
-            float targetDistance = laser.MaxBeamDistance;
+            bool hitObstacle = false;
+            RaycastHit obstacleHit = default;
+
             if (obstacleMask != 0 &&
-                Physics.Raycast(origin, dir, out var hit, laser.MaxBeamDistance, obstacleMask, QueryTriggerInteraction.Ignore))
+                Physics.Raycast(origin, dir, out RaycastHit hit, laser.MaxBeamDistance, obstacleMask, QueryTriggerInteraction.Ignore))
             {
-                targetDistance = hit.distance;
+                hitObstacle = true;
+                obstacleHit = hit;
+                float targetDistance = hit.distance;
+
+                currentLength = Mathf.MoveTowards(currentLength, targetDistance, laser.BeamSpeed * Time.deltaTime);
+                Vector3 endPos = origin + dir * currentLength;
+
+                lr.SetPosition(0, origin);
+                lr.SetPosition(1, endPos);
+
+                if ((currentLength + impactActivationEpsilon) >= targetDistance && laser.ImpactVfxPrefab != null)
+                {
+                    if (impactVfxInstance == null)
+                        impactVfxInstance = Instantiate(laser.ImpactVfxPrefab);
+
+                    impactVfxInstance.transform.SetPositionAndRotation(
+                        hit.point,
+                        Quaternion.LookRotation(hit.normal, Vector3.up));
+                }
+                else
+                {
+                    if (impactVfxInstance != null)
+                    {
+                        Destroy(impactVfxInstance);
+                        impactVfxInstance = null;
+                    }
+                }
+            }
+            else
+            {
+                float targetDistance = laser.MaxBeamDistance;
+                currentLength = Mathf.MoveTowards(currentLength, targetDistance, laser.BeamSpeed * Time.deltaTime);
+                Vector3 endPos = origin + dir * currentLength;
+
+                lr.SetPosition(0, origin);
+                lr.SetPosition(1, endPos);
+
+                if (impactVfxInstance != null)
+                {
+                    Destroy(impactVfxInstance);
+                    impactVfxInstance = null;
+                }
             }
 
-            currentLength = Mathf.Min(targetDistance, currentLength + laser.BeamSpeed * Time.deltaTime);
+            if (laser.HitMask != 0 && currentLength > 0.05f && dps > 0f)
+            {
+                float damageDistance = currentLength;
+                int hits = Physics.RaycastNonAlloc(origin, dir, _laserHitBuffer, damageDistance, laser.HitMask, QueryTriggerInteraction.Ignore);
+                float frameDamage = dps * Time.deltaTime;
 
-            lr.SetPosition(0, origin);
-            lr.SetPosition(1, origin + dir * currentLength);
+                for (int i = 0; i < hits; i++)
+                {
+                    var h = _laserHitBuffer[i];
+                    if (!h.collider) continue;
+                    if (h.transform == transform) continue;
+
+                    var dmgComp = h.transform.GetComponentInParent<IDamageable>();
+                    if (dmgComp != null)
+                    {
+                        dmgComp.ApplyDamage(frameDamage, gameObject);
+                    }
+
+                    // Jeœli przeszkoda zatrzymuj¹ca te¿ jest w HitMask, mo¿na przerwaæ po pierwszym.
+                    // (Jeœli nie chcesz przerwania – usuñ ten warunek.)
+                    if (hitObstacle && Mathf.Approximately(h.distance, obstacleHit.distance))
+                        break;
+                }
+            }
 
             elapsed += Time.deltaTime;
             yield return null;
         }
+
+        if (impactVfxInstance != null)
+            Destroy(impactVfxInstance);
 
         Destroy(laserObj);
     }

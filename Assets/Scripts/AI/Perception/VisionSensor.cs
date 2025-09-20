@@ -4,7 +4,7 @@ using UnityEngine;
 public class VisionSensor : MonoBehaviour
 {
     private EnemyConfig _config;
-    private bool _inTick; // guard reentrancy
+    private bool _inTick; 
 
     public void ApplyConfig(EnemyConfig config)
     {
@@ -14,7 +14,7 @@ public class VisionSensor : MonoBehaviour
     public void Tick(Blackboard bb)
     {
         if (_config == null) return;
-        if (_inTick) return; // zabezpieczenie przed przypadkow¹ rekurencj¹
+        if (_inTick) return; 
         _inTick = true;
         try
         {
@@ -62,7 +62,6 @@ public class VisionSensor : MonoBehaviour
                     continue;
                 }
 
-                // Raycast przeszkód
                 bool blocked = Physics.Raycast(origin, dirNorm, dist, _config.VisionObstacles);
                 bool hasLOS = !blocked;
                 entry.HasLineOfSight = hasLOS;

@@ -10,29 +10,31 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a70200c41cb891349ba73ea56f547c64, type: 3}
-  m_Name: Doozy_Config
+  m_Name: Mannequin_Config Hearing
   m_EditorClassIdentifier: 
+  Perception: 2
   WalkSpeed: 1
-  RunSpeed: 5
-  FleeSpeed: 5
+  RunSpeed: 6
+  FleeSpeed: 4
   Acceleration: 10
   AngularSpeed: 200
   StoppingDistance: 0.5
   RepathIntervalPatrol: 3
   RepathIntervalChase: 0.25
-  ViewDistance: 13
-  ViewAngle: 130
+  ViewDistance: 12
+  ViewAngle: 90
   VisionObstacles:
     serializedVersion: 2
     m_Bits: 128
   LostSightDelay: 1.25
-  HearingRadius: 16.5
-  IdleMinTime: 2
-  IdleMaxTime: 5
-  SearchDuration: 5
+  HearingRadius: 12
+  HearingMemoryDuration: 10
+  IdleMinTime: 5
+  IdleMaxTime: 6
+  SearchDuration: 10
   SearchRadius: 20
-  PreferredAttackRange: 10
-  AttackMode: 3
+  PreferredAttackRange: 2
+  AttackMode: 0
   MeleeAttack:
     Id: Attack
     AttackCooldown: 1
@@ -43,25 +45,25 @@ MonoBehaviour:
     AttackCooldown: 1
     Damage: 10
     ProjectilePrefab: {fileID: 1405263442411561244, guid: fda1f06f4db7ee1438f948c5afb35dcd, type: 3}
-    FireDelay: 1.5
+    FireDelay: 1.2
     ProjectileSpeed: 15
   ExplosionAttacks:
     Id: Attack
-    AttackCooldown: 1
+    AttackCooldown: 3
     Damage: 10
     ExplosionRadius: 5
     ExplosionVfxPrefab: {fileID: 0}
     VfxLifetime: 3
   LaserAttack:
-    Id: Laser Attack
-    AttackCooldown: 5
-    Damage: 1
-    LaserPrefab: {fileID: 5213638095349176657, guid: 32c218bffb5d82e42863e4ab86c24b97, type: 3}
-    Duration: 2.5
-    FireDelay: 1.1
+    Id: Attack
+    AttackCooldown: 1
+    Damage: 10
+    LaserPrefab: {fileID: 0}
+    Duration: 2
+    FireDelay: 0.5
     BeamSpeed: 60
     MaxBeamDistance: 500
-    ImpactVfxPrefab: {fileID: 1544155806044888537, guid: ea35a28631aa6f8498a5f948e0a9a64b, type: 3}
+    ImpactVfxPrefab: {fileID: 0}
   FleeHealthThreshold: 0.2
   FleeDistance: 12
   DrawGizmos: 1

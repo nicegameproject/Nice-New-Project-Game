@@ -14,6 +14,7 @@ public sealed class Blackboard
         public float Distance;
         public bool HeardNoise;
         public Vector3 HeardNoisePos;
+        public float LastHeardTime; 
 
         public void Reset()
         {
@@ -24,6 +25,7 @@ public sealed class Blackboard
             Distance = Mathf.Infinity;
             HeardNoise = false;
             HeardNoisePos = Vector3.zero;
+            LastHeardTime = -9999f;
         }
     }
 
@@ -122,8 +124,8 @@ public sealed class Blackboard
         TrackedTarget bestLOS = null;
         float bestLOSDist = Mathf.Infinity;
 
-        TrackedTarget bestSusp = null;
-        float bestSuspVal = -1f;
+        TrackedTarget bestHeard = null;
+        float bestHeardTime = -9999f;
 
         for (int i = 0; i < TrackedCount; i++)
         {
@@ -135,9 +137,24 @@ public sealed class Blackboard
                 bestLOSDist = t.Distance;
                 bestLOS = t;
             }
+
+            if (t.HeardNoise && t.LastHeardTime > bestHeardTime)
+            {
+                bestHeardTime = t.LastHeardTime;
+                bestHeard = t;
+            }
         }
 
-        var chosen = bestLOS != null ? bestLOS : (bestSuspVal > 0.01f ? bestSusp : null);
+        TrackedTarget chosen = null;
+        if (bestLOS != null)
+        {
+            chosen = bestLOS;
+        }
+        else if (bestHeard != null)
+        {
+            chosen = bestHeard;
+        }
+
         if (chosen != null)
             SetCurrentFromEntry(chosen);
         else

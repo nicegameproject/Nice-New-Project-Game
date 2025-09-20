@@ -20,6 +20,9 @@ public class AIDebugGizmos : MonoBehaviour
     private static readonly Color ViewColor = new Color(1f, 0.5f, 0f, 1f);
     private static readonly Color ViewArcColorTransparent = new Color(1f, 0.5f, 0f, 0.35f);
 
+    private static readonly Color HearingColor = new Color(0f, 1f, 1f, 1f);
+    private static readonly Color HearingFill = new Color(0f, 1f, 1f, 0.25f);
+
     void Awake()
     {
         _ai = GetComponent<AIController>();
@@ -49,6 +52,8 @@ public class AIDebugGizmos : MonoBehaviour
         var cfg = _ai.Config;
         var origin = transform.position + Vector3.up * CircleYOffset;
 
+        PerceptionMode mode = cfg.Perception;
+
         if (_ai.Blackboard != null)
         {
             Gizmos.color = Color.blue;
@@ -58,33 +63,82 @@ public class AIDebugGizmos : MonoBehaviour
             Gizmos.DrawWireSphere(_ai.Blackboard.LastKnownTargetPos, 0.2f);
         }
 
-        // Search radius 
         Gizmos.color = Color.yellow;
         DrawCircleXZ(origin, cfg.SearchRadius, CircleSegments);
         Handles.color = new Color(1f, 1f, 0f, 0.6f);
         Handles.DrawWireDisc(transform.position, Vector3.up, cfg.SearchRadius);
 
-        // PreferredAttackRange 
         Gizmos.color = Color.red;
         DrawCircleXZ(origin, cfg.PreferredAttackRange, CircleSegments);
         Handles.color = new Color(1f, 0f, 0f, 0.6f);
         Handles.DrawWireDisc(transform.position, Vector3.up, cfg.PreferredAttackRange);
 
-        // Hearing Radius 
-        Gizmos.color = Color.cyan;
-        DrawCircleXZ(origin, cfg.HearingRadius, CircleSegments);
-        Handles.color = new Color(1f, 1f, 0f, 0.6f);
-        Handles.DrawWireDisc(transform.position, Vector3.up, cfg.HearingRadius);
+        if (mode == PerceptionMode.HearingOnly || mode == PerceptionMode.VisionAndHearing)
+        {
+            DrawHearingOcclusion(origin, cfg.HearingRadius, Mathf.Max(16, CircleSegments));
+        }
 
-        // View distance
-        Gizmos.color = ViewColor;
-        DrawCircleXZ(origin, cfg.ViewDistance, CircleSegments);
+        if (mode == PerceptionMode.VisionOnly || mode == PerceptionMode.VisionAndHearing)
+        {
+            Gizmos.color = ViewColor;
+            DrawCircleXZ(origin, cfg.ViewDistance, CircleSegments);
+            DrawFOV(origin, cfg.ViewDistance, cfg.ViewAngle);
+            Handles.color = new Color(1f, 0.5f, 0f, 0.6f);
+            Handles.DrawWireDisc(transform.position, Vector3.up, cfg.ViewDistance);
+        }
+    }
 
-        DrawFOV(origin, cfg.ViewDistance, cfg.ViewAngle);
+    private void DrawHearingOcclusion(Vector3 origin, float radius, int segments)
+    {
+        if (_ai == null || _ai.Config == null) return;
+        if (segments < 8) segments = 8;
 
-        Handles.color = new Color(1f, 0.5f, 0f, 0.6f);
-        Handles.DrawWireDisc(transform.position, Vector3.up, cfg.ViewDistance);
+        Gizmos.color = HearingColor;
+        DrawCircleXZ(origin, radius, segments);
+        Handles.color = new Color(HearingColor.r, HearingColor.g, HearingColor.b, 0.6f);
+        Handles.DrawWireDisc(transform.position, Vector3.up, radius);
 
+        int mask = _ai.Config.VisionObstacles;
+
+        Vector3 ear = transform.position;
+        float stepDeg = 360f / segments;
+
+        var points = new Vector3[segments + 1];
+
+        for (int i = 0; i <= segments; i++)
+        {
+            float angle = stepDeg * i;
+            float rad = angle * Mathf.Deg2Rad;
+            Vector3 dir = new Vector3(Mathf.Cos(rad), 0f, Mathf.Sin(rad));
+
+            Vector3 endPoint;
+            if (Physics.Raycast(ear, dir, out RaycastHit hit, radius, mask))
+            {
+                endPoint = hit.point;
+            }
+            else
+            {
+                endPoint = ear + dir * radius;
+            }
+
+            points[i] = new Vector3(endPoint.x, origin.y, endPoint.z);
+        }
+
+        Gizmos.color = HearingColor;
+        Vector3 prev = points[0];
+        for (int i = 1; i < points.Length; i++)
+        {
+            Vector3 next = points[i];
+            Gizmos.DrawLine(prev, next);
+            prev = next;
+        }
+        Gizmos.DrawLine(points[points.Length - 1], points[0]);
+
+        Handles.color = HearingFill;
+        for (int i = 1; i < points.Length; i++)
+        {
+            Handles.DrawAAConvexPolygon(origin, points[i - 1], points[i]);
+        }
     }
 
     private void DrawFOV(Vector3 origin, float radius, float angleFull)
@@ -97,10 +151,6 @@ public class AIDebugGizmos : MonoBehaviour
 
         float half = angleFull * 0.5f;
         Vector3 fwd = transform.forward;
-        Quaternion qLeft = Quaternion.AngleAxis(-half, Vector3.up);
-        Quaternion qRight = Quaternion.AngleAxis(half, Vector3.up);
-        Vector3 leftDir = qLeft * fwd;
-        Vector3 rightDir = qRight * fwd;
 
         int segs = Mathf.Max(2, Mathf.CeilToInt(CircleSegments * (angleFull / 360f)));
         float step = angleFull / segs;

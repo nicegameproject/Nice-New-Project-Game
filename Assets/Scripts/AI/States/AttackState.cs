@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 public sealed class AttackState : IAIState
@@ -19,7 +19,7 @@ public sealed class AttackState : IAIState
 
     public void Enter()
     {
-        _ai.Locomotion.SetStoppingDistance(_ai.Config.PreferredAttackRange);
+        _ai.Locomotion.SetStoppingDistance(_ai.Config.PreferredAttackRange + 0.05f);
         _ai.Locomotion.StopImmediate();
         _ai.Locomotion.SetSpeedToZero();
 
